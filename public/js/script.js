@@ -164,108 +164,108 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // Joke ===============================================
 
-const jokeContainer = document.querySelector(".joke");
-const jokeText = document.querySelector(".joke-text"); 
-const jokeClose = document.querySelector(".joke-close");
-const jokeButton = document.querySelector(".joke-refresh"); 
-const emojiItems = document.querySelectorAll(".emoji-item");
+  const jokeContainer = document.querySelector(".joke");
+  const jokeText = document.querySelector(".joke-text"); 
+  const jokeClose = document.querySelector(".joke-close");
+  const jokeButton = document.querySelector(".joke-refresh"); 
+  const emojiItems = document.querySelectorAll(".emoji-item");
 
-let typingTimeout; 
-let isTyping = false;
-let isActive = true; 
+  let typingTimeout; 
+  let isTyping = false;
+  let isActive = true; 
 
-function typeEffect(element, text, delay = 30, callback) {
-    clearTimeout(typingTimeout); 
-    isTyping = true; 
-    element.innerHTML = ''; 
-    let index = 0;
+  function typeEffect(element, text, delay = 30, callback) {
+      clearTimeout(typingTimeout); 
+      isTyping = true; 
+      element.innerHTML = ''; 
+      let index = 0;
 
-    function addLetter() {
-        if (!isTyping) return; 
-        if (index < text.length) {
-            if (text[index] === "<" && text.slice(index, index + 4) === "<br>") {
-                element.innerHTML += "<br>";
-                index += 4;
-            } else {
-                element.innerHTML += text[index]; 
-                index++;
-            }
-            typingTimeout = setTimeout(addLetter, delay); 
-        } else {
-            isTyping = false; 
-            if (callback) callback();
-        }
-    }
-    addLetter(); 
-}
+      function addLetter() {
+          if (!isTyping) return; 
+          if (index < text.length) {
+              if (text[index] === "<" && text.slice(index, index + 4) === "<br>") {
+                  element.innerHTML += "<br>";
+                  index += 4;
+              } else {
+                  element.innerHTML += text[index]; 
+                  index++;
+              }
+              typingTimeout = setTimeout(addLetter, delay); 
+          } else {
+              isTyping = false; 
+              if (callback) callback();
+          }
+      }
+      addLetter(); 
+  }
 
-function capitalizeFirstLetter(str) {
-    return str.charAt(0).toUpperCase() + str.slice(1);
-}
+  function capitalizeFirstLetter(str) {
+      return str.charAt(0).toUpperCase() + str.slice(1);
+  }
 
-jokeContainer.addEventListener('click', () => {
-    if (!isActive) return; 
+  jokeContainer.addEventListener('click', () => {
+      if (!isActive) return; 
 
-    isActive = false; 
+      isActive = false; 
 
-    jokeButton.classList.remove("visible");
-    jokeClose.classList.remove("visible");
+      jokeButton.classList.remove("visible");
+      jokeClose.classList.remove("visible");
 
-    let xhr = new XMLHttpRequest();
-    xhr.open('GET', `${BASE_URL}/php/proxy.php`);
-    xhr.onload = function () {
-        let response = JSON.parse(xhr.responseText);
-        let joke = response['joke'];
+      let xhr = new XMLHttpRequest();
+      xhr.open('GET', `${BASE_URL}/php/proxy.php`);
+      xhr.onload = function () {
+          let response = JSON.parse(xhr.responseText);
+          let joke = response['joke'];
 
-        if (joke.includes("?")) {
-            let parts = joke.split("?");         
-            
-            let question = "- " + capitalizeFirstLetter(parts[0].trim()) + "?";
-            let answer = parts[1] ? "- " + capitalizeFirstLetter(parts[1].trim()) : "";
+          if (joke.includes("?")) {
+              let parts = joke.split("?");         
+              
+              let question = "- " + capitalizeFirstLetter(parts[0].trim()) + "?";
+              let answer = parts[1] ? "- " + capitalizeFirstLetter(parts[1].trim()) : "";
 
-            let formattedJoke = question + "<br>" + answer;
-            typeEffect(jokeText, formattedJoke, 70, () => {
-                setTimeout(() => {
-                    emojiItems.forEach(emoji => emoji.classList.add("showme"));
-                    setTimeout(() => {
-                        emojiItems.forEach(emoji => emoji.classList.remove("showme"));
-                        jokeButton.classList.add("visible");
-                        jokeClose.classList.add("visible");
-                        isActive = true; 
-                    }, 5000);
-                }, 2000);
-            });
+              let formattedJoke = question + "<br>" + answer;
+              typeEffect(jokeText, formattedJoke, 70, () => {
+                  setTimeout(() => {
+                      emojiItems.forEach(emoji => emoji.classList.add("showme"));
+                      setTimeout(() => {
+                          emojiItems.forEach(emoji => emoji.classList.remove("showme"));
+                          jokeButton.classList.add("visible");
+                          jokeClose.classList.add("visible");
+                          isActive = true; 
+                      }, 5000);
+                  }, 2000);
+              });
 
-        } else {
-            typeEffect(jokeText, "- " + capitalizeFirstLetter(joke), 70, () => {
-                setTimeout(() => {
-                    emojiItems.forEach(emoji => emoji.classList.add("showme"));
-                    setTimeout(() => {
-                        emojiItems.forEach(emoji => emoji.classList.remove("showme"));
-                        jokeButton.classList.add("visible");
-                        jokeClose.classList.add("visible");
-                        isActive = true; 
-                    }, 5000);
-                }, 2000);
-            });
-        }
-    };
-    xhr.send();
+          } else {
+              typeEffect(jokeText, "- " + capitalizeFirstLetter(joke), 70, () => {
+                  setTimeout(() => {
+                      emojiItems.forEach(emoji => emoji.classList.add("showme"));
+                      setTimeout(() => {
+                          emojiItems.forEach(emoji => emoji.classList.remove("showme"));
+                          jokeButton.classList.add("visible");
+                          jokeClose.classList.add("visible");
+                          isActive = true; 
+                      }, 5000);
+                  }, 2000);
+              });
+          }
+      };
+      xhr.send();
 
-    setTimeout(() => {
-        jokeContainer.classList.add("showme");
-    }, 7000);
-});
+      setTimeout(() => {
+          jokeContainer.classList.add("showme");
+      }, 7000);
+  });
 
-jokeClose.addEventListener("click", (event) => {
-    event.stopPropagation(); 
-    jokeText.textContent = "Make me laugh!";
-    jokeContainer.classList.remove("showme");
-    jokeButton.classList.remove("visible");
-    jokeClose.classList.remove("visible");
-    emojiItems.forEach(emoji => emoji.classList.remove("showme"));
-    isActive = true; 
-});
+  jokeClose.addEventListener("click", (event) => {
+      event.stopPropagation(); 
+      jokeText.textContent = "Make me laugh!";
+      jokeContainer.classList.remove("showme");
+      jokeButton.classList.remove("visible");
+      jokeClose.classList.remove("visible");
+      emojiItems.forEach(emoji => emoji.classList.remove("showme"));
+      isActive = true; 
+  });
 
 // Digital Avatar ===============================================
 
