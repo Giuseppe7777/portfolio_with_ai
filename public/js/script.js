@@ -122,7 +122,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const formData = new FormData(form);
 
-        fetch("http://localhost/my-portfolio-fullstack-ai/php/contact.php", {
+        fetch(`${BASE_URL}/php/contact.php`, {
             method: "POST",
             body: formData,
         })
@@ -212,7 +212,7 @@ jokeContainer.addEventListener('click', () => {
     jokeClose.classList.remove("visible");
 
     let xhr = new XMLHttpRequest();
-    xhr.open('GET', 'http://localhost/my-portfolio-fullstack-ai/php/proxy.php');
+    xhr.open('GET', `${BASE_URL}/php/proxy.php`);
     xhr.onload = function () {
         let response = JSON.parse(xhr.responseText);
         let joke = response['joke'];
