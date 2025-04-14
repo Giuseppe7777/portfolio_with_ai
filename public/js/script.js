@@ -160,7 +160,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 console.error("Error:", error);
             });
     });
-
+});
 
 // Joke ===============================================
 
@@ -267,5 +267,39 @@ jokeClose.addEventListener("click", (event) => {
     isActive = true; 
 });
 
-  
+// Digital Avatar ===============================================
+
+
+document.addEventListener("DOMContentLoaded", () => {
+
+    const talkButton = document.getElementById("talk-button");
+    const avatarImage = document.querySelector(".style-img");
+    const originalImageSrc = avatarImage.src;
+    const avatarImageSrc = "/img/digital-avatar.png"; // Path to your digital avatar image
+
+    talkButton.addEventListener("click", () => {
+        // Change the image to the digital avatar
+        avatarImage.src = avatarImageSrc;
+
+        // Play the greeting message
+        const greetingMessage = "Great that you are here. We can speak with you and you can ask me whatever you want to know about me.";
+        playGreetingMessage(greetingMessage);
+    });
+
+    function playGreetingMessage(message) {
+        fetch(`${BASE_URL}/php/proxy.php`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ text: message }),
+        })
+            .then(response => response.json())
+            .then(data => {
+                const audio = new Audio(data.audioUrl);
+                audio.play();
+            })
+            .catch(error => console.error("Error playing greeting message:", error));
+    }
+
 });
