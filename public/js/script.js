@@ -1,166 +1,166 @@
 $(function() {
 
-    $('.navbar-toggle').click(function() {
-        $(this).toggleClass('act');
-            if($(this).hasClass('act')) {
-                $('.main-menu').addClass('act');
-            }
-            else {
-                $('.main-menu').removeClass('act');
-            }
-    });
+  $('.navbar-toggle').click(function() {
+      $(this).toggleClass('act');
+          if($(this).hasClass('act')) {
+              $('.main-menu').addClass('act');
+          }
+          else {
+              $('.main-menu').removeClass('act');
+          }
+  });
 
-    
-    $(document).on('click', '.page-scroll a', function(event) {
-        var $anchor = $(this);
-        $('html, body').stop().animate({
-            scrollTop: $($anchor.attr('href')).offset().top
-        }, 1000, 'easeInOutExpo');
-        event.preventDefault();
-    });
+  
+  $(document).on('click', '.page-scroll a', function(event) {
+      var $anchor = $(this);
+      $('html, body').stop().animate({
+          scrollTop: $($anchor.attr('href')).offset().top
+      }, 1000, 'easeInOutExpo');
+      event.preventDefault();
+  });
 
-    
-    $('body').scrollspy({
-        target: '.site-header',
-        offset: 10
-    });
+  
+  $('body').scrollspy({
+      target: '.site-header',
+      offset: 10
+  });
 
-    var $section = $('.section-skills');
+  var $section = $('.section-skills');
 
-    function loadDaBars() {
-        $('.progress .progress-bar').each(function() {
-            $(this).css('width', '0%'); 
-            var transitionGoal = $(this).attr('data-transitiongoal');
-            $(this).stop().animate({ width: transitionGoal + "%" }, 1000);
-        });
-    }
+  function loadDaBars() {
+      $('.progress .progress-bar').each(function() {
+          $(this).css('width', '0%'); 
+          var transitionGoal = $(this).attr('data-transitiongoal');
+          $(this).stop().animate({ width: transitionGoal + "%" }, 1000);
+      });
+  }
 
-    function resetDaBars() {
-        $('.progress .progress-bar').css('width', '0%'); 
-    }
+  function resetDaBars() {
+      $('.progress .progress-bar').css('width', '0%'); 
+  }
 
-    if ('IntersectionObserver' in window) {
-        let observer = new IntersectionObserver(entries => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    loadDaBars();
-                } else {
-                    resetDaBars(); 
-                }
-            });
-        }, { threshold: 0.3 });
+  if ('IntersectionObserver' in window) {
+      let observer = new IntersectionObserver(entries => {
+          entries.forEach(entry => {
+              if (entry.isIntersecting) {
+                  loadDaBars();
+              } else {
+                  resetDaBars(); 
+              }
+          });
+      }, { threshold: 0.3 });
 
-        observer.observe($section[0]);
-    }
+      observer.observe($section[0]);
+  }
 
-    /* Counters  */
-    if ($(".section-counters .start").length>0) {
-        $(".section-counters .start").each(function() {
-            var stat_item = $(this),
-            offset = stat_item.offset().top;
-            $(window).scroll(function() {
-                if($(window).scrollTop() > (offset - 1000) && !(stat_item.hasClass('counting'))) {
-                    stat_item.addClass('counting');
-                    stat_item.countTo();
-                }
-            });
-        });
-    };
+  /* Counters  */
+  if ($(".section-counters .start").length>0) {
+      $(".section-counters .start").each(function() {
+          var stat_item = $(this),
+          offset = stat_item.offset().top;
+          $(window).scroll(function() {
+              if($(window).scrollTop() > (offset - 1000) && !(stat_item.hasClass('counting'))) {
+                  stat_item.addClass('counting');
+                  stat_item.countTo();
+              }
+          });
+      });
+  };
 
-	// another custom callback for counting to infinity
-	$('#infinity').data('countToOptions', {
-		onComplete: function (value) {
-            count.call(this, {
-            from: value,
-            to: value + 1
-            });
-		}
-	});
+// another custom callback for counting to infinity
+$('#infinity').data('countToOptions', {
+  onComplete: function (value) {
+          count.call(this, {
+          from: value,
+          to: value + 1
+          });
+  }
+});
 
-	$('#infinity').each(count);
+$('#infinity').each(count);
 
-	function count(options) {
-        var $this = $(this);
-        options = $.extend({}, options || {}, $this.data('countToOptions') || {});
-        $this.countTo(options);
-    }
+function count(options) {
+      var $this = $(this);
+      options = $.extend({}, options || {}, $this.data('countToOptions') || {});
+      $this.countTo(options);
+  }
 
-    // Navigation overlay
-    var s = skrollr.init({
-            forceHeight: false,
-            smoothScrolling: false,
-            mobileDeceleration: 0.004,
-            mobileCheck: function() {
-                //hack - forces mobile version to be off
-                return false;
-            }
-    });
-    
+  // Navigation overlay
+  var s = skrollr.init({
+          forceHeight: false,
+          smoothScrolling: false,
+          mobileDeceleration: 0.004,
+          mobileCheck: function() {
+              //hack - forces mobile version to be off
+              return false;
+          }
+  });
+  
 });
 
 document.addEventListener("DOMContentLoaded", () => {
-    const form = document.getElementById("contact-form");
-    const messageContainer = document.createElement("div"); 
+  const form = document.getElementById("contact-form");
+  const messageContainer = document.createElement("div"); 
 
-    messageContainer.id = "message-container";
-    messageContainer.style.position = "absolute";
-    messageContainer.style.bottom = "50%"; 
-    messageContainer.style.left = "50%";
-    messageContainer.style.transform = "translateX(-50%)"; 
-    messageContainer.style.marginBottom = "10px"; 
-    messageContainer.style.opacity = "0"; 
-    messageContainer.style.transition = "opacity 0.5s ease"; 
-    messageContainer.style.padding = "5px 25px"; 
-    messageContainer.style.border = "1px solid green"; 
-    messageContainer.style.backgroundColor = "green"; 
+  messageContainer.id = "message-container";
+  messageContainer.style.position = "absolute";
+  messageContainer.style.bottom = "50%"; 
+  messageContainer.style.left = "50%";
+  messageContainer.style.transform = "translateX(-50%)"; 
+  messageContainer.style.marginBottom = "10px"; 
+  messageContainer.style.opacity = "0"; 
+  messageContainer.style.transition = "opacity 0.5s ease"; 
+  messageContainer.style.padding = "5px 25px"; 
+  messageContainer.style.border = "1px solid green"; 
+  messageContainer.style.backgroundColor = "green"; 
 
-    form.style.position = "relative"; 
-    form.appendChild(messageContainer);
+  form.style.position = "relative"; 
+  form.appendChild(messageContainer);
 
-    form.addEventListener("submit", function (e) {
-        e.preventDefault();
+  form.addEventListener("submit", function (e) {
+      e.preventDefault();
 
-        const formData = new FormData(form);
+      const formData = new FormData(form);
 
-        fetch(`${BASE_URL}/php/contact.php`, {
-            method: "POST",
-            body: formData,
-        })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === "success") {
-                    messageContainer.textContent = data.message;
-                    messageContainer.style.color = "white";
-                    messageContainer.style.opacity = "1"; 
-                    form.reset();
+      fetch(`${BASE_URL}/php/contact.php`, {
+          method: "POST",
+          body: formData,
+      })
+          .then(response => response.json())
+          .then(data => {
+              if (data.status === "success") {
+                  messageContainer.textContent = data.message;
+                  messageContainer.style.color = "white";
+                  messageContainer.style.opacity = "1"; 
+                  form.reset();
 
-                    setTimeout(() => {
-                        messageContainer.style.opacity = "0"; 
-                    }, 5000);
-                } else {
-                    messageContainer.textContent = data.message;
-                    messageContainer.style.color = "red";
-                    messageContainer.style.opacity = "1"; 
+                  setTimeout(() => {
+                      messageContainer.style.opacity = "0"; 
+                  }, 5000);
+              } else {
+                  messageContainer.textContent = data.message;
+                  messageContainer.style.color = "red";
+                  messageContainer.style.opacity = "1"; 
 
-                    setTimeout(() => {
-                        messageContainer.style.opacity = "0"; 
-                    }, 5000);
-                }
-            })
-            .catch(error => {
-                messageContainer.textContent =
-                    "An error occurred. Please try again later.";
-                messageContainer.style.color = "red";
-                messageContainer.style.opacity = "1"; 
+                  setTimeout(() => {
+                      messageContainer.style.opacity = "0"; 
+                  }, 5000);
+              }
+          })
+          .catch(error => {
+              messageContainer.textContent =
+                  "An error occurred. Please try again later.";
+              messageContainer.style.color = "red";
+              messageContainer.style.opacity = "1"; 
 
-                setTimeout(() => {
-                    messageContainer.style.opacity = "0"; 
-                }, 5000);
+              setTimeout(() => {
+                  messageContainer.style.opacity = "0"; 
+              }, 5000);
 
-                console.error("Error:", error);
-            });
-    });
-});
+              console.error("Error:", error);
+          });
+  });
+
 
 // Joke ===============================================
 
@@ -180,24 +180,24 @@ document.addEventListener("DOMContentLoaded", () => {
       element.innerHTML = ''; 
       let index = 0;
 
-      function addLetter() {
-          if (!isTyping) return; 
-          if (index < text.length) {
-              if (text[index] === "<" && text.slice(index, index + 4) === "<br>") {
-                  element.innerHTML += "<br>";
-                  index += 4;
-              } else {
-                  element.innerHTML += text[index]; 
-                  index++;
-              }
-              typingTimeout = setTimeout(addLetter, delay); 
-          } else {
-              isTyping = false; 
-              if (callback) callback();
-          }
-      }
-      addLetter(); 
-  }
+    function addLetter() {
+        if (!isTyping) return; 
+        if (index < text.length) {
+            if (text[index] === "<" && text.slice(index, index + 4) === "<br>") {
+                element.innerHTML += "<br>";
+                index += 4;
+            } else {
+                element.innerHTML += text[index]; 
+                index++;
+            }
+            typingTimeout = setTimeout(addLetter, delay); 
+        } else {
+            isTyping = false; 
+            if (callback) callback();
+        }
+    }
+    addLetter(); 
+}
 
   function capitalizeFirstLetter(str) {
       return str.charAt(0).toUpperCase() + str.slice(1);
@@ -267,39 +267,4 @@ document.addEventListener("DOMContentLoaded", () => {
       isActive = true; 
   });
 
-  // Digital Avatar ===============================================
-
-
-  document.addEventListener("DOMContentLoaded", () => {
-
-      const talkButton = document.getElementById("talk-button");
-      const avatarImage = document.querySelector(".style-img");
-      const originalImageSrc = avatarImage.src;
-      const avatarImageSrc = "/img/digital-avatar.png"; // Path to your digital avatar image
-
-      talkButton.addEventListener("click", () => {
-          // Change the image to the digital avatar
-          avatarImage.src = avatarImageSrc;
-
-          // Play the greeting message
-          const greetingMessage = "Great that you are here. We can speak with you and you can ask me whatever you want to know about me.";
-          playGreetingMessage(greetingMessage);
-      });
-
-      function playGreetingMessage(message) {
-          fetch(`${BASE_URL}/php/proxy.php`, {
-              method: "POST",
-              headers: {
-                  "Content-Type": "application/json",
-              },
-              body: JSON.stringify({ text: message }),
-          })
-              .then(response => response.json())
-              .then(data => {
-                  const audio = new Audio(data.audioUrl);
-                  audio.play();
-              })
-              .catch(error => console.error("Error playing greeting message:", error));
-      }
-
-  });
+});
