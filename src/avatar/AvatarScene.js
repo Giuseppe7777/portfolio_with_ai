@@ -1,6 +1,8 @@
 
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { saveAs } from 'file-saver';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 export function createAvatarScene(container) {
   /* 1 ─ Сцена, камера, рендер */
@@ -12,132 +14,164 @@ export function createAvatarScene(container) {
     0.1,
     1000
   );
-  camera.position.set(0, 1.5, 3);
+  camera.position.set(0, 2.2, 3);
+  camera.lookAt(0, 1.2, 0);
 
   const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
   renderer.setSize(container.clientWidth, container.clientHeight);
+
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true; // для плавності
+  controls.dampingFactor = 0.1;
+
+  controls.enablePan = false;      // Заборонити переміщення по сцені
+  controls.enableZoom = false;     // Заборонити зум
+  controls.target.set(0, 1.2, 0);  // Центрувати на голову або груди
+  controls.update();
+
   renderer.setPixelRatio(window.devicePixelRatio);
   container.appendChild(renderer.domElement);
 
   /* 2 ─ Світло */
   scene.add(new THREE.HemisphereLight(0xffffff, 0x222222, 0.6));
+
   const key = new THREE.DirectionalLight(0xffffff, 3);
   key.position.set(2, 4, 5);
   scene.add(key);
+
   const rim = new THREE.DirectionalLight(0xffffff, 1.5);
   rim.position.set(-2, 3, -3);
   scene.add(rim);
+
   scene.add(new THREE.AmbientLight(0xffffff, 0.3));
 
   /* 3 ─ GLB */
   const loader = new GLTFLoader();
   loader.load(
-    '/models/model-avatar-2.glb',     
+    '/models/model-avatar-5-1.glb',     
     (gltf) => {
       const avatar = gltf.scene;
-      avatar.position.set(0, 0.5, 0);
-      avatar.rotation.y = Math.PI * 1.9;
+
+      // Знайдемо меш, який має shape keys (зазвичай голова або тіло)
+
+      avatar.traverse((obj) => {
+        if (obj.isMesh && obj.morphTargetDictionary) {
+          console.log('🔹 Mesh with Shape Keys found:', obj.name);
+      
+          const dict = obj.morphTargetDictionary;
+          console.log('🔸 Shape Keys:', Object.keys(dict)); // ← імена всіх shape key-ів
+      
+          // 🧪 Додатково: показати індекси
+          for (const [key, index] of Object.entries(dict)) {
+            console.log(`  ➤ ${key}: index ${index}`);
+          }
+        }
+      });
+
+      // Знайдемо меш, який має shape keys (зазвичай голова або тіло)
+
+
+
+      avatar.position.set(0, 0.2, 0);
+      avatar.rotation.y = THREE.MathUtils.degToRad(-16);
       scene.add(avatar);
 
-      /* 3-A  потрібні кістки */
-      const B = (n) => avatar.getObjectByName(n);
+      //  ========================================= МІЙ КОД ДЛЯ ВИТЯГАННЯ КІСТОК Start
+      const allBones = []; // Створюємо масив для збору всіх кісток
 
-      const jaw        = B('mixamorigJawRoot');
+      gltf.scene.traverse((object) => {
+        if (object.type === 'Bone') {
+          allBones.push({
+            name: object.name,
+            position: {
+              x: object.position.x,
+              y: object.position.y,
+              z: object.position.z,
+            },
+            rotation: {
+              x: object.rotation.x,
+              y: object.rotation.y,
+              z: object.rotation.z,
+            },
+            scale: {
+              x: object.scale.x,
+              y: object.scale.y,
+              z: object.scale.z,
+            },
+            quaternion: {
+              x: object.quaternion.x,
+              y: object.quaternion.y,
+              z: object.quaternion.z,
+              w: object.quaternion.w,
+            }
+          });
+        }
+      });
 
-      const L_SH       = B('mixamorigLeftShoulder');
-      const R_SH       = B('mixamorigRightShoulder');
-      const L_UPARM    = B('mixamorigLeftArm');
-      const R_UPARM    = B('mixamorigRightArm');
-      const L_FOREARM  = B('mixamorigLeftForeArm');
-      const R_FOREARM  = B('mixamorigRightForeArm');
-      const L_HAND     = B('mixamorigLeftHand');
-      const R_HAND     = B('mixamorigRightHand');
+      // Після збору всіх кісток — зберігаємо файл
+      // const boneDataBlob = new Blob([JSON.stringify(allBones, null, 2)], { type: 'application/json' });
+      // saveAs(boneDataBlob, 'bones.json');
 
-      /* 3-B  базові кути (rest-pose) */
-      const rest = {
-        jawX : jaw?.rotation.x ?? 0,
-        L_Sz : L_SH?.rotation.z ?? 0,
-        R_Sz : R_SH?.rotation.z ?? 0,
-        L_Ux : L_UPARM?.rotation.x ?? 0,
-        R_Ux : R_UPARM?.rotation.x ?? 0,
-        L_Fx : L_FOREARM?.rotation.x ?? 0,
-        R_Fx : R_FOREARM?.rotation.x ?? 0,
-        L_Hx : L_HAND?.rotation.x ?? 0,
-        R_Hx : R_HAND?.rotation.x ?? 0
-      };
+      //  ========================================= МІЙ КОД ДЛЯ ВИТЯГАННЯ КІСТОК End
+      
 
-      /* 3-C  цільові кути (рад)  —  ТВОЇ перевірені значення */
-      const JAW_OPEN  =  THREE.MathUtils.degToRad(10);
-      const SH_FWD    =  THREE.MathUtils.degToRad(10);
-      const ARM_DOWN  =  THREE.MathUtils.degToRad(65);
-      const FORE_DOWN =  THREE.MathUtils.degToRad(25);
-      const HAND_DOWN =  THREE.MathUtils.degToRad(10);
-
-      /* 3-D  допоміжна функція: target(rest, Δ, active) */
-      const tgt = (r, delta, on) => (on ? r + delta : r);
-
-      /* 3-E  Idle-кліпи */
+      // Якщо є анімації у файлі — активуємо їх
       const mixer = new THREE.AnimationMixer(avatar);
-      gltf.animations.forEach((c) => mixer.clipAction(c).play());
+      const clip = gltf.animations[0]; // беремо першу (і єдину) анімацію
+      const action = mixer.clipAction(clip);
 
-      /* 3-F  перемикач */
-      let active = false;
-      container.addEventListener('click', () => { active = !active; });
+      action.setLoop(THREE.LoopOnce);           // 🔁 Програти лише один раз
+      action.clampWhenFinished = true;          // ⏹️ Залишитись у фінальній позі
+      action.play();
 
-      /* 3-G  цикл */
+      // Вмикаємо міміку усмішки під час руху
+      // === МІМІКА: усмішка + м’який погляд ===
+const faceMesh = avatar.getObjectByName('Body_1');
+if (faceMesh && faceMesh.morphTargetDictionary) {
+  // Індекси shape keys
+  const smileR = faceMesh.morphTargetDictionary['A39_Mouth_Smile_Right'];
+  const smileL = faceMesh.morphTargetDictionary['A38_Mouth_Smile_Left'];
+  const browInnerUp = faceMesh.morphTargetDictionary['A01_Brow_Inner_Up'];
+  const eyeWideR = faceMesh.morphTargetDictionary['A19_Eye_Wide_Right'];
+  const eyeWideL = faceMesh.morphTargetDictionary['A18_Eye_Wide_Left'];
+  const squintR = faceMesh.morphTargetDictionary['A17_Eye_Squint_Right'];
+  const squintL = faceMesh.morphTargetDictionary['A16_Eye_Squint_Left'];
+
+  // 🟤 Початкове — забрати виряченість
+  faceMesh.morphTargetInfluences[eyeWideR] = 0;
+  faceMesh.morphTargetInfluences[eyeWideL] = 0;
+  faceMesh.morphTargetInfluences[squintR] = 0.15;
+  faceMesh.morphTargetInfluences[squintL] = 0.15;
+
+  // 🟢 1. Плавно включити усмішку
+  let smileValue = 0;
+  const smileInterval = setInterval(() => {
+    smileValue += 0.05;
+    faceMesh.morphTargetInfluences[smileR] = smileValue;
+    faceMesh.morphTargetInfluences[smileL] = smileValue;
+    if (smileValue >= 1) clearInterval(smileInterval);
+  }, 50);
+}
+
+      // Вмикаємо міміку усмішки під час руху
+
+
+
+      /* 4 ─ Цикл */
       const clock = new THREE.Clock();
-      const SPEED = 0.15;                   // плавність (0.1-0.25)
-
       (function loop() {
         requestAnimationFrame(loop);
-        const dt = clock.getDelta();
-
-        // рот
-        if (jaw)
-          jaw.rotation.x = THREE.MathUtils.lerp(
-            jaw.rotation.x, tgt(rest.jawX, -JAW_OPEN, active), SPEED);
-
-        // плечі
-        if (L_SH && R_SH) {
-          L_SH.rotation.z = THREE.MathUtils.lerp(
-            L_SH.rotation.z, tgt(rest.L_Sz,  SH_FWD,  active), SPEED);
-          R_SH.rotation.z = THREE.MathUtils.lerp(
-            R_SH.rotation.z, tgt(rest.R_Sz, -SH_FWD,  active), SPEED);
-        }
-
-        // upper-arm
-        if (L_UPARM && R_UPARM) {
-          L_UPARM.rotation.x = THREE.MathUtils.lerp(
-            L_UPARM.rotation.x, tgt(rest.L_Ux, ARM_DOWN, active), SPEED);
-          R_UPARM.rotation.x = THREE.MathUtils.lerp(
-            R_UPARM.rotation.x, tgt(rest.R_Ux, ARM_DOWN, active), SPEED);
-        }
-
-        // fore-arm
-        if (L_FOREARM && R_FOREARM) {
-          L_FOREARM.rotation.x = THREE.MathUtils.lerp(
-            L_FOREARM.rotation.x, tgt(rest.L_Fx, FORE_DOWN, active), SPEED);
-          R_FOREARM.rotation.x = THREE.MathUtils.lerp(
-            R_FOREARM.rotation.x, tgt(rest.R_Fx, FORE_DOWN, active), SPEED);
-        }
-
-        // hand
-        if (L_HAND && R_HAND) {
-          L_HAND.rotation.x = THREE.MathUtils.lerp(
-            L_HAND.rotation.x, tgt(rest.L_Hx, HAND_DOWN, active), SPEED);
-          R_HAND.rotation.x = THREE.MathUtils.lerp(
-            R_HAND.rotation.x, tgt(rest.R_Hx, HAND_DOWN, active), SPEED);
-        }
-
-        mixer.update(dt);
+        const delta = clock.getDelta();
+        mixer.update(delta);
         renderer.render(scene, camera);
+        controls.update();
       })();
     },
     undefined,
     (e) => console.error('GLB load error', e)
   );
 
-  /* 4 ─ Resize */
+  /* 5 ─ Resize */
   window.addEventListener('resize', () => {
     camera.aspect = container.clientWidth / container.clientHeight;
     camera.updateProjectionMatrix();
