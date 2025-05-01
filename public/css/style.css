@@ -734,18 +734,15 @@ a.icon-up-bg:hover {color: #5de4fc;}
   z-index: 1;
 }
 
-/* Перехід для фото */
 #avatar-photo.fade-out {
   opacity: 0;
 }
 
-/* Перехід для canvas */
 #avatar-container.fade-in {
   opacity: 1;
   pointer-events: auto;
 }
 
-/* Кнопка */
 #talk-avatar-wrapper {
   position: absolute;
   bottom: -117px;

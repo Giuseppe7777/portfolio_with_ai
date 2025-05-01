@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
       canvas.classList.add('fade-in');       
       createAvatarScene(canvas);             
-    }, 500);
+    }, 800);
   });
 });
 

@@ -14,8 +14,8 @@ export function createAvatarScene(container) {
     0.1,
     1000
   );
-  camera.position.set(0, 2.2, 3);
-  camera.lookAt(0, 1.2, 0);
+
+  camera.position.set(0, 1.8, 3);
 
   const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
   renderer.setSize(container.clientWidth, container.clientHeight);
@@ -26,7 +26,7 @@ export function createAvatarScene(container) {
 
   controls.enablePan = false;      // Заборонити переміщення по сцені
   controls.enableZoom = false;     // Заборонити зум
-  controls.target.set(0, 1.2, 0);  // Центрувати на голову або груди
+  controls.target.set(0, 1, 0);  // Центрувати на голову або груди
   controls.update();
 
   renderer.setPixelRatio(window.devicePixelRatio);
@@ -71,7 +71,7 @@ export function createAvatarScene(container) {
 
 
 
-      avatar.position.set(0, 0.2, 0);
+      avatar.position.set(0, -3, -10);
       avatar.rotation.y = THREE.MathUtils.degToRad(-5);
       scene.add(avatar);
 
@@ -165,10 +165,16 @@ if (faceMesh && faceMesh.morphTargetDictionary) {
 
       /* 4 ─ Цикл */
       const clock = new THREE.Clock();
+      const targetAvatarPosition = new THREE.Vector3(-0.15, 0.2, 0.36); // ціль
+      
       (function loop() {
         requestAnimationFrame(loop);
         const delta = clock.getDelta();
         mixer.update(delta);
+      
+        // Плавне підпливання моделі
+        avatar.position.lerp(targetAvatarPosition, 0.03);
+      
         renderer.render(scene, camera);
         controls.update();
       })();
