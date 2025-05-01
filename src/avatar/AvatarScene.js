@@ -54,26 +54,25 @@ export function createAvatarScene(container) {
 
       // Знайдемо меш, який має shape keys (зазвичай голова або тіло)
 
-      avatar.traverse((obj) => {
-        if (obj.isMesh && obj.morphTargetDictionary) {
-          console.log('🔹 Mesh with Shape Keys found:', obj.name);
+      // avatar.traverse((obj) => {
+      //   if (obj.isMesh && obj.morphTargetDictionary) {
+      //     console.log('🔹 Mesh with Shape Keys found:', obj.name);
       
-          const dict = obj.morphTargetDictionary;
-          console.log('🔸 Shape Keys:', Object.keys(dict)); // ← імена всіх shape key-ів
+      //     const dict = obj.morphTargetDictionary;
+      //     console.log('🔸 Shape Keys:', Object.keys(dict)); 
       
-          // 🧪 Додатково: показати індекси
-          for (const [key, index] of Object.entries(dict)) {
-            console.log(`  ➤ ${key}: index ${index}`);
-          }
-        }
-      });
+      //     for (const [key, index] of Object.entries(dict)) {
+      //       console.log(`  ➤ ${key}: index ${index}`);
+      //     }
+      //   }
+      // });
 
       // Знайдемо меш, який має shape keys (зазвичай голова або тіло)
 
 
 
       avatar.position.set(0, 0.2, 0);
-      avatar.rotation.y = THREE.MathUtils.degToRad(-16);
+      avatar.rotation.y = THREE.MathUtils.degToRad(-5);
       scene.add(avatar);
 
       //  ========================================= МІЙ КОД ДЛЯ ВИТЯГАННЯ КІСТОК Start
@@ -117,12 +116,19 @@ export function createAvatarScene(container) {
 
       // Якщо є анімації у файлі — активуємо їх
       const mixer = new THREE.AnimationMixer(avatar);
-      const clip = gltf.animations[0]; // беремо першу (і єдину) анімацію
+      const clip = gltf.animations[0];
       const action = mixer.clipAction(clip);
 
-      action.setLoop(THREE.LoopOnce);           // 🔁 Програти лише один раз
-      action.clampWhenFinished = true;          // ⏹️ Залишитись у фінальній позі
-      action.play();
+      action.reset();                            
+      action.setLoop(THREE.LoopOnce);
+      action.clampWhenFinished = true;
+      action.play();                             
+      action.paused = true;    
+
+      setTimeout(() => {
+        action.paused = false;                   
+        action.fadeIn(0.001);
+      }, 1200); 
 
       // Вмикаємо міміку усмішки під час руху
       // === МІМІКА: усмішка + м’який погляд ===

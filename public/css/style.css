@@ -713,4 +713,51 @@ a.icon-up-bg:hover {color: #5de4fc;}
   }
 }
 
+/* Avatar start
+================================================== */ 
+
+#avatar-photo {
+  transition: opacity 1.2s ease;
+  opacity: 1;
+  z-index: 2;
+}
+
+#avatar-container {
+  transition: opacity 1.2s ease;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+/* Перехід для фото */
+#avatar-photo.fade-out {
+  opacity: 0;
+}
+
+/* Перехід для canvas */
+#avatar-container.fade-in {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Кнопка */
+#talk-avatar-wrapper {
+  position: absolute;
+  bottom: -117px;
+  left: 0;
+}
+
+@media (max-width: 577px) {
+  #talk-avatar-wrapper {
+    bottom: -18px;
+  }
+}
+
+/* Avatar end
+================================================== */
 
