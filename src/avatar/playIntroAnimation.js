@@ -12,6 +12,12 @@ export function playIntroAnimation(mixer, avatar, faceMesh) {
   action.paused = false;
   action.fadeIn(0.001);
 
+  mixer.addEventListener('finished', () => {
+    import('./startIntroVoice.js').then(({ startIntroVoice }) => {
+      startIntroVoice(faceMesh, avatar);
+    });
+  });
+
   // 🔹 Міміка — усмішка та м’який погляд
   if (faceMesh && faceMesh.morphTargetDictionary) {
     const dict = faceMesh.morphTargetDictionary;
@@ -23,6 +29,8 @@ export function playIntroAnimation(mixer, avatar, faceMesh) {
     const eyeWideL = dict['A18_Eye_Wide_Left'];
     const squintR = dict['A17_Eye_Squint_Right'];
     const squintL = dict['A16_Eye_Squint_Left'];
+
+    console.log('🙂 smileL:', smileL, '🙂 smileR:', smileR);
 
     // 🟤 Забрати "виряченість"
     infl[eyeWideR] = 0;

@@ -1,6 +1,7 @@
 import { setupScene } from './AvatarScene.js';
 import { loadAvatarModel } from './loadAvatarModel.js';
 import { playIntroAnimation } from './playIntroAnimation.js';
+import { startBlinking } from './blink.js';
 
 /**
  * Стартова функція, яка:
@@ -31,6 +32,8 @@ export async function startIntroSequence(container) {
     renderer.render(scene, camera);
     controls.update();
   })();
+
+  startBlinking(faceMesh);
 
   console.log('🚀 startIntroSequence запущено');
 

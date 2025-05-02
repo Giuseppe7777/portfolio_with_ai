@@ -49,6 +49,14 @@ export function loadAvatarModel(scene) {
         // 🔸 FaceMesh для міміки
         const faceMesh = avatar.getObjectByName('Body_1');
 
+        // Shape Keys ==========================================================
+        
+        // if (faceMesh && faceMesh.morphTargetDictionary) {
+        //   console.log('Доступні shape keys:', Object.keys(faceMesh.morphTargetDictionary));
+        // }
+        
+        // Shape Keys ==========================================================
+
         resolve({ avatar, mixer, faceMesh });
       },
       undefined,
