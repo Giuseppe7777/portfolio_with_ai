@@ -1,1 +1,1 @@
-import './avatar-entry.js';
+import "./avatar/avatar-entry.js";
