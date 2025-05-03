@@ -1,5 +1,6 @@
 
 import * as THREE from 'three';
+import { setTalking } from '../avatar/state';
 
 /**
  * Програє озвучку тексту та анімує рот через гучність аудіо
@@ -59,11 +60,13 @@ export async function playVoiceWithMimic(audioUrl, faceMesh, avatar) {
     } else {
       infl[mouthIndex] = 0;
       jaw.rotation.x = baseJaw; // Повертаємо у закритий стан
+      setTalking(false); // 🟢 завершив говорити
     }
   };
 
   // ▶️ Пуск
   console.time('⏱️ AUDIO PLAY DELAY');
+  setTalking(true); // 🔴 почав говорити
 
 audio.play().then(() => {
   console.timeEnd('⏱️ AUDIO PLAY DELAY'); // покаже, скільки мс пройшло
@@ -72,5 +75,6 @@ audio.play().then(() => {
   animate();
 }).catch(err => {
     console.error('🎵 Не вдалося програти аудіо:', err);
+    setTalking(false);
   });
 }
