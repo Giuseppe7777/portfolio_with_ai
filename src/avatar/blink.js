@@ -26,7 +26,7 @@ export function startBlinking(faceMesh) {
   /* запускаємо із випадковим інтервалом 3‑6 сек */
   const loop = () => {
     blinkOnce();
-    const next = 3000 + Math.random() * 3000;
+    const next = 2000 + Math.random() * 2000;
     setTimeout(loop, next);
   };
   loop();
