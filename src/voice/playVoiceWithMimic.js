@@ -9,6 +9,7 @@ import * as THREE from 'three';
  */
 export async function playVoiceWithMimic(audioUrl, faceMesh, avatar) {
   const audio = new Audio(audioUrl);
+  audio.preload = 'auto'; // ✅ важливо
   audio.volume = 1.0;
 
   // 🟣 Shape key
@@ -62,10 +63,14 @@ export async function playVoiceWithMimic(audioUrl, faceMesh, avatar) {
   };
 
   // ▶️ Пуск
-  audio.play().then(() => {
-    context.resume();
-    animate();
-  }).catch(err => {
+  console.time('⏱️ AUDIO PLAY DELAY');
+
+audio.play().then(() => {
+  console.timeEnd('⏱️ AUDIO PLAY DELAY'); // покаже, скільки мс пройшло
+
+  context.resume();
+  animate();
+}).catch(err => {
     console.error('🎵 Не вдалося програти аудіо:', err);
   });
 }

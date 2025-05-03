@@ -46,6 +46,8 @@ export function loadAvatarModel(scene) {
         action.play();
         action.paused = true;
 
+        console.log('🎞️ Тривалість анімації WalkAndWave:', clip.duration, 'секунд');
+
         // 🔸 FaceMesh для міміки
         const faceMesh = avatar.getObjectByName('Body_1');
 
