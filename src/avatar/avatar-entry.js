@@ -7,8 +7,13 @@ import { startIntroSequence } from './startIntroSequence.js';
 const button = document.getElementById('talk-button');
 const container = document.getElementById('avatar-container');
 
+let hasStarted = false;
+
 if (button && container) {
   button.addEventListener('click', () => {
+    if (hasStarted) return; // 🛑 Не дозволяємо другий запуск
+    hasStarted = true;
+
     startIntroSequence(container);
   });
 } else {

@@ -49,7 +49,7 @@ export async function playVoiceWithMimic(audioUrl, faceMesh, avatar) {
     analyser.getByteFrequencyData(dataArray);
     const volume = dataArray.reduce((a, b) => a + b, 0) / dataArray.length / 255;
 
-    infl[mouthIndex] = volume * 3.5;
+    infl[mouthIndex] = volume * 3.7;
 
     jaw.rotation.x = baseJaw + volume * jawAmplitude;
 
