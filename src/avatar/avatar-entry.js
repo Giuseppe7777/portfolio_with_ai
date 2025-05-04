@@ -11,7 +11,7 @@ let hasStarted = false;
 
 if (button && container) {
   button.addEventListener('click', () => {
-    if (hasStarted) return; // 🛑 Не дозволяємо другий запуск
+    if (hasStarted) return; // Не дозволяємо другий запуск
     hasStarted = true;
 
     startIntroSequence(container);

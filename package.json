@@ -12,6 +12,7 @@
     "vite": "^6.2.0"
   },
   "dependencies": {
+    "@tweenjs/tween.js": "^25.0.0",
     "file-saver": "^2.0.5",
     "three": "^0.175.0"
   }
