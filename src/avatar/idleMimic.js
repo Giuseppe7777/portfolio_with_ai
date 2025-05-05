@@ -1,3 +1,4 @@
+// src/avatar/idleMimic.js
 import * as THREE from 'three';
 import { isTalking } from './state';
 
@@ -19,6 +20,11 @@ export function startIdleFaceMovements(faceMesh, avatar) {
     infl[squintL] = 0.1 + Math.random() * 0.9;
     infl[squintR] = 0.1 + Math.random() * 0.9;
   }, 3000);
+
+  const head = avatar.getObjectByName('mixamorigHead');
+  const neck = avatar.getObjectByName('mixamorigNeck');
+  const spine2 = avatar.getObjectByName('mixamorigSpine2');
+  const spine1 = avatar.getObjectByName('mixamorigSpine1');
 
   const lArm = avatar.getObjectByName('mixamorigLeftArm');
   const lFore = avatar.getObjectByName('mixamorigLeftForeArm');
@@ -67,26 +73,13 @@ export function startIdleFaceMovements(faceMesh, avatar) {
   r1 && (r1.rotation.order = 'XYZ');
   p1 && (p1.rotation.order = 'XYZ');
 
-  const steps = [
-    new THREE.Euler(0.7, 0.2, 0.2),              // стартова поза
-    new THREE.Euler(3.48, 2.75, 2.85)            // фінальна — рука на талії
-  ];
-
-  const stepsFore = [
-    new THREE.Euler(0.4, 0.5, 0.6),
-    new THREE.Euler(0.116, 0.7, 1.4)
-  ];
-
-  const stepsHand = [
-    new THREE.Euler(-0.1, 0.1, 0.4),
-    new THREE.Euler(-1.025, 0.344, 1.227)
-  ];
-
+  const lerpSpeed = 0.03;
   let stepIndex = 0;
   let progress = 0;
-  const lerpSpeed = 0.03;
+  let t = 0;
+  const headCur = { x: 0, y: 0, z: 0 };
 
-  function setQuats(fromIndex, toIndex) {
+  function setQuats() {
     fromQuat.arm.copy(lArm.quaternion).normalize();
     toQuat.arm.setFromEuler(new THREE.Euler(3.571, 3.042, 3.089)).normalize();
 
@@ -115,22 +108,34 @@ export function startIdleFaceMovements(faceMesh, avatar) {
     toQuat.p1.setFromEuler(new THREE.Euler(-0.454, -0.087, -0.070)).normalize();
   }
 
-
-  setQuats(0, 1);
+  setQuats();
 
   function animate() {
     requestAnimationFrame(animate);
+    t += 0.016;
 
     if (isTalking) return;
 
-    if (stepIndex < steps.length - 1) {
+    // 🧠 Idle рухи тулуба:
+    if (head) {
+      headCur.x = THREE.MathUtils.lerp(headCur.x, clamp(Math.sin(t * 0.3), 0.25, 0), 0.05);
+      headCur.y = THREE.MathUtils.lerp(headCur.y, clamp(Math.sin(t * 0.2), -0.1, 0.3), 0.05);
+      headCur.z = THREE.MathUtils.lerp(headCur.z, clamp(Math.sin(t * 0.17), -0.05, 0.05), 0.05);
+      head.rotation.set(headCur.x, headCur.y, headCur.z);
+    }
+    if (neck) neck.rotation.x = Math.sin(t * 0.4) * 0.02;
+    if (spine2) spine2.rotation.x = Math.sin(t * 0.2) * 0.05;
+    if (spine1) {
+      spine1.rotation.z = Math.sin(t * 0.25) * 0.06;
+      spine1.rotation.y = Math.sin(t * 0.25) * 0.2;
+    }
+
+    if (stepIndex < 1) {
       progress += lerpSpeed;
       if (progress >= 1) {
         progress = 1;
-        stepIndex = steps.length - 1; // зупиняємося на останньому кроці
+        stepIndex = 1;
         console.log(`✅ Final step reached`);
-
-        // 🔍 Виводимо обертання ключових кісток
         console.log("🔎 Final bone rotations:");
         console.log("lArm:", lArm.rotation);
         console.log("lFore:", lFore.rotation);
@@ -180,4 +185,8 @@ export function startIdleFaceMovements(faceMesh, avatar) {
       console.table(Object.keys(bones));
     }
   };
+}
+
+function clamp(v, min, max) {
+  return Math.max(min, Math.min(max, v));
 }
