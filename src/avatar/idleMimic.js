@@ -139,8 +139,8 @@ poseControl.set('p1',    -0.454, -0.087, -0.070);
 
 
 
-
 /*
+
 import * as THREE from 'three';
 import { isTalking } from './state';
 
@@ -256,7 +256,7 @@ function clamp(v, min, max) {
 */
 
 // src/avatar/startIdleFaceMovements.js
-
+/*
 import * as THREE from 'three';
 import { isTalking } from './state';
 
@@ -290,11 +290,13 @@ export function startIdleFaceMovements(faceMesh, avatar) {
   lHand.rotation.order = 'XYZ';
 
   const steps = [
-    new THREE.Euler(1.011, 0.511, 0.559),
-    new THREE.Euler(1.4, 0.7, 1.1),
-    new THREE.Euler(2.0, 1.6, 1.8),
-    new THREE.Euler(3.0, 2.5, 2.6),
-    new THREE.Euler(3.551, 3.042, 3.089),
+    new THREE.Euler(1.011, 0.511, 0.559),  // старт
+    new THREE.Euler(0.7, 0.2, 0.2),        // трохи назад
+    new THREE.Euler(0.9, 1.0, 0.4),        // назовні
+    new THREE.Euler(1.5, 1.7, 1.0),        // до тіла
+    new THREE.Euler(2.2, 2.3, 2.0),        // згин
+    new THREE.Euler(3.1, 2.8, 2.6),        // фінальний перехід
+    new THREE.Euler(3.551, 3.042, 3.089),  // фінал
   ];
 
   const stepsFore = [
@@ -333,6 +335,157 @@ export function startIdleFaceMovements(faceMesh, avatar) {
 
   animate();
 }
+*/
 
 
-// src/avatar/startIdleFaceMovements.js
+//=======================================================================================================
+
+
+// src/avatar/idleMimic.js
+import * as THREE from 'three';
+import { isTalking } from './state';
+
+export function startIdleFaceMovements(faceMesh, avatar) {
+  const infl = faceMesh.morphTargetInfluences;
+  const dict = faceMesh.morphTargetDictionary;
+
+  const smileL = dict['A38_Mouth_Smile_Left'];
+  const smileR = dict['A39_Mouth_Smile_Right'];
+  const browUp = dict['A06_Brow_Up'];
+  const squintL = dict['A16_Eye_Squint_Left'];
+  const squintR = dict['A17_Eye_Squint_Right'];
+
+  setInterval(() => {
+    if (!infl) return;
+    infl[smileL] = 0.8 + Math.random() * 0.5;
+    infl[smileR] = 0.8 + Math.random() * 0.5;
+    infl[browUp] = Math.random() * 0.3;
+    infl[squintL] = 0.1 + Math.random() * 0.9;
+    infl[squintR] = 0.1 + Math.random() * 0.9;
+  }, 3000);
+
+  const lArm = avatar.getObjectByName('mixamorigLeftArm');
+  const lFore = avatar.getObjectByName('mixamorigLeftForeArm');
+  const lHand = avatar.getObjectByName('mixamorigLeftHand');
+
+  if (!lArm || !lFore || !lHand) return;
+
+  lArm.rotation.order = 'XYZ';
+  lFore.rotation.order = 'XYZ';
+  lHand.rotation.order = 'XYZ';
+
+  const steps = [
+    new THREE.Euler(0.7, 0.2, 0.2),
+    new THREE.Euler(3.48, 2.75, 2.85),
+    new THREE.Euler(3.551, 3.042, 3.089),
+  ];
+
+  const stepsFore = [
+    new THREE.Euler(0.4, 0.5, 0.6),
+    new THREE.Euler(0.116, 0.7, 1.4),
+    new THREE.Euler(0.116, 1.364, 1.170),
+  ];
+
+  const stepsHand = [
+    new THREE.Euler(-0.1, 0.1, 0.4),
+    new THREE.Euler(-1.025, 0.344, 1.227),
+    new THREE.Euler(-1.025, 0.344, 1.227),
+  ];
+
+  let stepIndex = 0;
+  let progress = 0;
+  const lerpSpeed = 0.03; // швидкість між кроками
+
+  // Квантерніони для інтерполяції
+  const fromQuat = {
+    arm: new THREE.Quaternion(),
+    fore: new THREE.Quaternion(),
+    hand: new THREE.Quaternion(),
+  };
+  const toQuat = {
+    arm: new THREE.Quaternion(),
+    fore: new THREE.Quaternion(),
+    hand: new THREE.Quaternion(),
+  };
+
+  function setQuats(fromIndex, toIndex) {
+    fromQuat.arm.setFromEuler(steps[fromIndex]);
+    toQuat.arm.setFromEuler(steps[toIndex]);
+
+    fromQuat.fore.setFromEuler(stepsFore[fromIndex]);
+    toQuat.fore.setFromEuler(stepsFore[toIndex]);
+
+    fromQuat.hand.setFromEuler(stepsHand[fromIndex]);
+    toQuat.hand.setFromEuler(stepsHand[toIndex]);
+  }
+
+  setQuats(0, 1);
+
+  function animate() {
+    requestAnimationFrame(animate);
+
+    if (isTalking) return;
+
+    if (stepIndex < steps.length - 1) {
+      progress += lerpSpeed;
+      if (progress >= 1) {
+        progress = 0;
+        stepIndex++;
+        if (stepIndex < steps.length - 1) {
+          setQuats(stepIndex, stepIndex + 1);
+        }
+        console.log(`▶ Step ${stepIndex}`, steps[stepIndex]);
+      }
+
+      // Плавний перехід
+      lArm.quaternion.copy(fromQuat.arm).slerp(toQuat.arm, progress);
+      lFore.quaternion.copy(fromQuat.fore).slerp(toQuat.fore, progress);
+      lHand.quaternion.copy(fromQuat.hand).slerp(toQuat.hand, progress);
+    }
+  }
+
+  animate();
+
+  // 🔧 Інтерактивний дебаггер через консоль
+  window.poseControl = {
+    set(boneName, x, y, z) {
+      const bone = avatar.getObjectByName(boneName);
+      if (!bone) return console.warn(`❌ Кістка ${boneName} не знайдена`);
+      bone.rotation.set(x, y, z);
+      console.log(`✅ ${boneName} встановлено → X=${x.toFixed(3)}, Y=${y.toFixed(3)}, Z=${z.toFixed(3)}`);
+    },
+    get(boneName) {
+      const bone = avatar.getObjectByName(boneName);
+      if (!bone) return console.warn(`❌ Кістка ${boneName} не знайдена`);
+      const r = bone.rotation;
+      console.log(`📍 ${boneName} → X=${r.x.toFixed(3)}, Y=${r.y.toFixed(3)}, Z=${r.z.toFixed(3)}`);
+    },
+    list() {
+      const bones = {};
+      avatar.traverse(obj => {
+        if (obj.isBone) bones[obj.name] = obj;
+      });
+      console.log("🦴 Доступні кістки:");
+      console.table(Object.keys(bones));
+    }
+  };
+}
+
+
+
+//======================================================================================================
+
+
+/*
+poseControl.set('lArm',   1.047,  0.942,  0.489);
+poseControl.set('lFore',  0.951,  0.964,  2.370);
+poseControl.set('lHand', -0.925, -0.244,  0.227);
+
+poseControl.set('t1',    -0.227, -0.140,  0.070);
+poseControl.set('t2',     0.000,  0.052,  0.925);
+
+poseControl.set('i1',    -0.733,  0.000, -0.646);
+poseControl.set('m1',    -0.611,  0.000, -0.489);
+poseControl.set('r1',    -0.471,  0.157, -0.384);
+poseControl.set('p1',    -0.454, -0.087, -0.070);
+*/
