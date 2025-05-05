@@ -9,7 +9,7 @@ export function promptMicrophoneAccess() {
   // Стилі — мінімальний гарний вигляд
   Object.assign(micBtn.style, {
     position: 'absolute',
-    bottom: '20px',
+    bottom: '70px',
     left: '50%',
     transform: 'translateX(-50%)',
     padding: '12px 20px',

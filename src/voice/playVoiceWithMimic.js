@@ -8,7 +8,7 @@ import { setTalking } from '../avatar/state';
  * @param {THREE.Mesh} faceMesh - меш із morphTargetDictionary та morphTargetInfluences
  * @param {THREE.Object3D} avatar - повна модель, з якої витягується щелепа
  */
-export async function playVoiceWithMimic(audioUrl, faceMesh, avatar) {
+export async function playVoiceWithMimic(audioUrl, faceMesh, avatar, onStartSpeaking = () => {}) {
   const audio = new Audio(audioUrl);
   audio.preload = 'auto'; // ✅ важливо
   audio.volume = 1.0;
@@ -62,15 +62,19 @@ export async function playVoiceWithMimic(audioUrl, faceMesh, avatar) {
     }
   };
 
-  // ▶️ Пуск
-  setTalking(true); 
-
+  await new Promise(resolve => {
+    audio.addEventListener('loadedmetadata', resolve);
+  });
+  
   audio.play().then(() => {
     context.resume();
+    setTalking(true);          // тепер тут
+    onStartSpeaking();         // тут запускається idle
     animate();
-
-}).catch(err => {
+  }).catch(err => {
     console.error('🎵 Не вдалося програти аудіо:', err);
     setTalking(false);
   });
+  
+  return audio.duration;
 }

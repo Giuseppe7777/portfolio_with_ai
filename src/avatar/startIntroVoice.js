@@ -10,10 +10,16 @@ export async function startIntroVoice(faceMesh, avatar) {
 
   const audioUrl = '/audio/intro-voice.mp3'; // ← тут буде ElevenLabs в майбутньому
 
-  //  Починаємо фонову міміку
-  startIdleFaceMovements(faceMesh, avatar);
+   // запускаємо голос і передаємо старт idle-анімації як callback
+  const duration = await playVoiceWithMimic(
+    audioUrl,
+    faceMesh,
+    avatar,
+    () => startIdleFaceMovements(faceMesh, avatar)
+  );
 
-  await playVoiceWithMimic(audioUrl, faceMesh, avatar);
-
-  promptMicrophoneAccess();
+  // показуємо кнопку за 5 сек до кінця
+  setTimeout(() => {
+    promptMicrophoneAccess();
+  }, (duration - 5) * 1000);
 }
