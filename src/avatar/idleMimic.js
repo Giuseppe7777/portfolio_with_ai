@@ -135,17 +135,17 @@ export function startIdleFaceMovements(faceMesh, avatar) {
       if (progress >= 1) {
         progress = 1;
         stepIndex = 1;
-        console.log(`✅ Final step reached`);
-        console.log("🔎 Final bone rotations:");
-        console.log("lArm:", lArm.rotation);
-        console.log("lFore:", lFore.rotation);
-        console.log("lHand:", lHand.rotation);
-        console.log("t1:", t1?.rotation);
-        console.log("t2:", t2?.rotation);
-        console.log("i1:", i1?.rotation);
-        console.log("m1:", m1?.rotation);
-        console.log("r1:", r1?.rotation);
-        console.log("p1:", p1?.rotation);
+        // console.log(`✅ Final step reached`);
+        // console.log("🔎 Final bone rotations:");
+        // console.log("lArm:", lArm.rotation);
+        // console.log("lFore:", lFore.rotation);
+        // console.log("lHand:", lHand.rotation);
+        // console.log("t1:", t1?.rotation);
+        // console.log("t2:", t2?.rotation);
+        // console.log("i1:", i1?.rotation);
+        // console.log("m1:", m1?.rotation);
+        // console.log("r1:", r1?.rotation);
+        // console.log("p1:", p1?.rotation);
       }
 
       lArm.quaternion.copy(fromQuat.arm).slerp(toQuat.arm, progress);
