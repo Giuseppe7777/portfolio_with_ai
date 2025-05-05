@@ -14,11 +14,26 @@ export function loadAvatarModel(scene) {
       '/models/model-avatar-5-1.glb',
       (gltf) => {
         const avatar = gltf.scene;
+                // ===============================================================
+
+        const armature = avatar.getObjectByProperty('type', 'Bone')?.parent;
+          if (armature) {
+            console.log('📦 Armature name:', armature.name);
+            console.log('🔁 Armature rotation:', armature.rotation);
+            console.log('🔍 Armature scale:', armature.scale);
+          }
+
+        // ===============================================================
         avatar.position.set(0, -3, -10);
-        avatar.rotation.y = THREE.MathUtils.degToRad(-5);
+        avatar.rotation.y = 0;
         scene.add(avatar);
 
         console.log('✅ GLB завантажено, avatar:', avatar);
+        console.log('🧭 Оберт моделі:');
+        console.log(avatar.rotation.x, avatar.rotation.y, avatar.rotation.z);
+        console.log('📦 Позиція:');
+        console.log(avatar.position.x, avatar.position.y, avatar.position.z);
+
 
         // 🔸 Витягування кісток — лише якщо потрібно
         const allBones = [];

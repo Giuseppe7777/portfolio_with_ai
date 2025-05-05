@@ -20,7 +20,6 @@ export async function playVoiceWithMimic(audioUrl, faceMesh, avatar) {
   const mouthIndex = dict[mouthOpenKey];
 
   if (mouthIndex === undefined) {
-    console.warn(`❌ Shape key '${mouthOpenKey}' не знайдено`);
     audio.play();
     return;
   }
@@ -28,7 +27,6 @@ export async function playVoiceWithMimic(audioUrl, faceMesh, avatar) {
   // 🦴 Щелепна кістка
   const jaw = avatar.getObjectByName('mixamorigJawRoot');
   if (!jaw) {
-    console.warn('❌ Щелепна кістка не знайдена');
     audio.play();
     return;
   }
@@ -65,14 +63,12 @@ export async function playVoiceWithMimic(audioUrl, faceMesh, avatar) {
   };
 
   // ▶️ Пуск
-  console.time('⏱️ AUDIO PLAY DELAY');
-  setTalking(true); // 🔴 почав говорити
+  setTalking(true); 
 
-audio.play().then(() => {
-  console.timeEnd('⏱️ AUDIO PLAY DELAY'); // покаже, скільки мс пройшло
+  audio.play().then(() => {
+    context.resume();
+    animate();
 
-  context.resume();
-  animate();
 }).catch(err => {
     console.error('🎵 Не вдалося програти аудіо:', err);
     setTalking(false);
