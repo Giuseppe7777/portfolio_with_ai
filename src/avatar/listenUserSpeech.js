@@ -1,6 +1,9 @@
 /**
  * Показує кнопку для дозволу на мікрофон і починає слухати, якщо користувач погодився
  */
+
+let isFirstMessage = true;
+
 export function promptMicrophoneAccess() {
   const micBtn = document.createElement('button');
   micBtn.textContent = '🎤 Allow microphone';
@@ -57,30 +60,54 @@ function listenToSpeech(stream) {
     const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
     console.log('✅ Запис завершено. Blob:', audioBlob);
     console.log('🧾 Тип:', audioBlob.type, 'Розмір:', audioBlob.size, 'байт');
-  
-    // 🕓 Формуємо timestamp
+
     const timestamp = new Date().toISOString();
     console.log('🕓 Timestamp запису:', timestamp);
-  
-    // 📦 Формуємо FormData
+
     const formData = new FormData();
     formData.append('audio', audioBlob, `voice-${timestamp}.webm`);
     formData.append('timestamp', timestamp);
-  
-    // 🚀 Відправляємо запит на сервер
-    fetch('http://localhost/my-portfolio-fullstack-ai/my-portfolio-fullstack-ai/php/proxy.php', {
-      method: 'POST',
-      body: formData
-    })
-      .then(response => response.json()) // 🟢 тепер очікуємо JSON, не текст!
-      .then(data => {
-        console.log('📬 Відповідь від proxy.php:', data);
+
+    // --- Перше повідомлення: і пошта, і Speech-to-Text
+    if (isFirstMessage) {
+      console.log('📨 Перше повідомлення: надсилаємо на пошту + Speech-to-Text');
+
+      // 1. Надсилаємо тобі на email через proxy.php
+      fetch('http://localhost/my-portfolio-fullstack-ai/my-portfolio-fullstack-ai/php/proxy.php', {
+        method: 'POST',
+        body: formData
       })
-      .catch(error => {
-        console.error('❌ Помилка під час надсилання на сервер:', error);
-      });
-  };
-  
+        .then(response => response.json())
+        .then(data => console.log('📬 Відповідь від proxy.php (email):', data))
+        .catch(error => console.error('❌ Email error:', error));
+
+      // 2. Надсилаємо на speechToText.php
+      fetch('http://localhost/my-portfolio-fullstack-ai/my-portfolio-fullstack-ai/php/speechToText.php', {
+        method: 'POST',
+        body: formData
+      })
+        .then(res => res.json())
+        .then(data => {
+          console.log('📝 Speech-to-Text результат:', data);
+        })
+        .catch(err => console.error('❌ Speech-to-Text помилка:', err));
+
+      isFirstMessage = false;
+
+    } else {
+      console.log('🗣️ Наступне повідомлення: тільки Speech-to-Text');
+
+      fetch('http://localhost/my-portfolio-fullstack-ai/my-portfolio-fullstack-ai/php/speechToText.php', {
+        method: 'POST',
+        body: formData
+      })
+        .then(res => res.json())
+        .then(data => {
+          console.log('📝 Speech-to-Text результат:', data);
+        })
+        .catch(err => console.error('❌ Speech-to-Text помилка:', err));
+    }
+  };  
 
   mediaRecorder.start();
   console.log('⏺️ Запис запущено');
