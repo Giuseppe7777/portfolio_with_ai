@@ -29,7 +29,7 @@ export function promptMicrophoneAccess() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
       console.log('🎤 Доступ до мікрофона надано');
-      micBtn.remove(); // прибираємо кнопку після дозволу
+      micBtn.remove(); 
 
       listenToSpeech(stream); // ⏳ Далі: слухаємо голос (реалізуємо окремо)
     } catch (err) {
