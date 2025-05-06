@@ -50,6 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Зміст листа
         $mail->isHTML(true);
+        $mail->CharSet = 'UTF-8';
         $mail->Subject = '=?UTF-8?B?' . base64_encode('Нове повідомлення з контактної форми') . '?=';
         $mail->Body    = "
             <h2>Нове повідомлення</h2>
@@ -57,6 +58,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <p><strong>Email:</strong> $email</p>
             <p><strong>Повідомлення:</strong><br>$message</p>
         ";
+        // ⛔ Вимикаємо перевірку SSL тільки локально
+        $mail->SMTPOptions = [
+          'ssl' => [
+            'verify_peer' => false,
+            'verify_peer_name' => false,
+            'allow_self_signed' => true,
+          ],
+        ];
+        // ⛔ Вимикаємо перевірку SSL тільки локально
 
         // Відправка листа
         $mail->send();

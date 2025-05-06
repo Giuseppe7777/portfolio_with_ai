@@ -45,9 +45,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['audio']) && isset($_
         $mail->addAddress('malankajosyp@gmail.com', 'Yosyp Malanka');
 
         $mail->isHTML(true);
+        $mail->CharSet = 'UTF-8';
         $mail->Subject = '=?UTF-8?B?' . base64_encode('🎤 Новий голосовий запис від користувача') . '?=';
         $mail->Body    = '<p><strong>Час запису:</strong> ' . htmlspecialchars($timestamp) . '</p>';
         $mail->addAttachment($audioFile['tmp_name'], 'voice-' . $timestamp . '.webm');
+        // ⛔ Вимикаємо перевірку SSL тільки для локальної розробки
+        $mail->SMTPOptions = [
+          'ssl' => [
+            'verify_peer' => false,
+            'verify_peer_name' => false,
+            'allow_self_signed' => true,
+          ],
+        ];
+        // ⛔ Вимикаємо перевірку SSL тільки для локальної розробки
         $mail->send();
 
         echo json_encode(['status' => 'success', 'message' => 'Файл успішно відправлено на пошту.']);
