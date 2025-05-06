@@ -29,7 +29,7 @@ export function promptMicrophoneAccess() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
       console.log('🎤 Доступ до мікрофона надано');
-      micBtn.remove(); 
+      micBtn.remove();
 
       listenToSpeech(stream); // ⏳ Далі: слухаємо голос (реалізуємо окремо)
     } catch (err) {
@@ -40,8 +40,54 @@ export function promptMicrophoneAccess() {
 }
 
 /**
- * Поки тимчасовий лог — тут буде повна реалізація мовного розпізнавання
+ * Записує голос користувача у форматі webm і виводить лог про запис
  */
 function listenToSpeech(stream) {
-  console.log('🧠 Починаємо слухати голос користувача… (це буде реалізовано на наступному кроці)');
+  console.log('🎙️ Починаємо запис голосу...');
+
+  const mediaRecorder = new MediaRecorder(stream);
+  const audioChunks = [];
+
+  mediaRecorder.ondataavailable = (event) => {
+    audioChunks.push(event.data);
+    console.log('📥 Отримано шматок аудіо:', event.data);
+  };
+
+  mediaRecorder.onstop = () => {
+    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+    console.log('✅ Запис завершено. Blob:', audioBlob);
+    console.log('🧾 Тип:', audioBlob.type, 'Розмір:', audioBlob.size, 'байт');
+  
+    // 🕓 Формуємо timestamp
+    const timestamp = new Date().toISOString();
+    console.log('🕓 Timestamp запису:', timestamp);
+  
+    // 📦 Формуємо FormData
+    const formData = new FormData();
+    formData.append('audio', audioBlob, `voice-${timestamp}.webm`);
+    formData.append('timestamp', timestamp);
+  
+    // 🚀 Відправляємо запит на сервер
+    fetch('http://localhost/my-portfolio-fullstack-ai/my-portfolio-fullstack-ai/php/proxy.php', {
+      method: 'POST',
+      body: formData
+    })
+      .then(response => response.json()) // 🟢 тепер очікуємо JSON, не текст!
+      .then(data => {
+        console.log('📬 Відповідь від proxy.php:', data);
+      })
+      .catch(error => {
+        console.error('❌ Помилка під час надсилання на сервер:', error);
+      });
+  };
+  
+
+  mediaRecorder.start();
+  console.log('⏺️ Запис запущено');
+
+  // ⏱️ Обмежуємо запис до 5 секунд для тесту
+  setTimeout(() => {
+    mediaRecorder.stop();
+    console.log('🛑 Примусово зупиняємо запис через 5 секунд');
+  }, 5000);
 }
