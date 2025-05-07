@@ -4,6 +4,15 @@ header("Access-Control-Allow-Headers: *");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Content-Type: application/json");
 
+// Підключаємо .env-файл
+$envPath = dirname(__DIR__) . '/.env';
+if (file_exists($envPath)) {
+    $envVars = parse_ini_file($envPath);
+    foreach ($envVars as $key => $value) {
+        putenv("$key=$value");
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['audio'])) {
     $audioFile = $_FILES['audio'];
 
@@ -16,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['audio'])) {
         'response_format' => 'json'
     ];
 
-    $apiKey = 'ТВОЙ_API_КЛЮЧ_OPENAI';
+    $apiKey = getenv('OPENAI_KEY');
 
     $ch = curl_init('https://api.openai.com/v1/audio/transcriptions');
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
