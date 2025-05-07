@@ -53,53 +53,62 @@ function listenToSpeech(stream) {
   const mediaRecorder = new MediaRecorder(stream);
   const audioChunks = [];
 
-  let audioContext = new AudioContext();
-  let source = audioContext.createMediaStreamSource(stream);
-  let analyser = audioContext.createAnalyser();
+  const audioContext = new AudioContext();
+  const source = audioContext.createMediaStreamSource(stream);
+  const analyser = audioContext.createAnalyser();
   analyser.fftSize = 512;
-
   source.connect(analyser);
 
-  const silenceThreshold = 0.01; // чутливість — можна налаштувати
+  const silenceThreshold = 0.01;
   let speaking = false;
-  let lastSpokeTime = Date.now();
+  let lastSpokeTime = null;
+  let initialSilenceTimer = null;
 
   const checkSilence = () => {
     const data = new Uint8Array(analyser.fftSize);
     analyser.getByteTimeDomainData(data);
 
-    // Вираховуємо середнє відхилення від центру (128)
     let sum = 0;
     for (let i = 0; i < data.length; i++) {
       let value = (data[i] - 128) / 128;
       sum += value * value;
     }
-    const rms = Math.sqrt(sum / data.length); // root mean square
-
+    const rms = Math.sqrt(sum / data.length);
     const now = Date.now();
 
     if (rms > silenceThreshold) {
       if (!speaking) {
         console.log('🔊 Користувач почав говорити');
         speaking = true;
+
+        // Видаляємо таймер на 10 сек, бо користувач заговорив
+        if (initialSilenceTimer) {
+          clearTimeout(initialSilenceTimer);
+          initialSilenceTimer = null;
+        }
       }
+
       lastSpokeTime = now;
-    } else if (speaking && now - lastSpokeTime > 4000) {
-      console.log('🤐 Тиша понад 4 сек — зупиняємо запис');
+
+    } else if (speaking && lastSpokeTime && now - lastSpokeTime > 3000) {
+      console.log('🤐 Тиша понад 3 сек — зупиняємо запис');
       stopAll();
     }
   };
 
   const silenceInterval = setInterval(checkSilence, 200);
 
-  const maxDurationTimeout = setTimeout(() => {
-    console.log('⏱ Макс. час запису вичерпано — зупиняємо');
-    stopAll();
+  // Якщо користувач нічого не скаже протягом 10 секунд — зупиняємо
+  initialSilenceTimer = setTimeout(() => {
+    if (!speaking) {
+      console.log('⌛ Нічого не сказав за 10 сек — зупиняємо запис');
+      stopAll();
+    }
   }, 10000);
 
   const stopAll = () => {
     clearInterval(silenceInterval);
-    clearTimeout(maxDurationTimeout);
+    clearTimeout(initialSilenceTimer);
     mediaRecorder.stop();
     audioContext.close();
   };
@@ -121,11 +130,9 @@ function listenToSpeech(stream) {
     formData.append('audio', audioBlob, `voice-${timestamp}.webm`);
     formData.append('timestamp', timestamp);
 
-    // --- Перше повідомлення: і пошта, і Speech-to-Text
     if (isFirstMessage) {
       console.log('📨 Перше повідомлення: надсилаємо на пошту + Speech-to-Text');
 
-      // 1. Email
       fetch('http://localhost/my-portfolio-fullstack-ai/my-portfolio-fullstack-ai/php/proxy.php', {
         method: 'POST',
         body: formData
@@ -134,7 +141,6 @@ function listenToSpeech(stream) {
         .then(data => console.log('📬 Відповідь від proxy.php (email):', data))
         .catch(error => console.error('❌ Email error:', error));
 
-      // 2. Whisper
       fetch('http://localhost/my-portfolio-fullstack-ai/my-portfolio-fullstack-ai/php/speechToText.php', {
         method: 'POST',
         body: formData
