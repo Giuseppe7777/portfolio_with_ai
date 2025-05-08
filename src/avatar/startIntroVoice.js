@@ -1,16 +1,19 @@
 import { playVoiceWithMimic } from '../voice/playVoiceWithMimic.js';
 import { startIdleFaceMovements } from './idleMimic.js';
-import { promptMicrophoneAccess } from './listenUserSpeech.js';
+import { promptMicrophoneAccess, setAvatarContext } from './listenUserSpeech.js';
 
 /**
  * Програє перше вітання після анімації WalkAndWave
  * @param {THREE.Mesh} faceMesh - меш з shape keys для міміки
+ * @param {THREE.Group} avatar - повна модель
  */
 export async function startIntroVoice(faceMesh, avatar) {
+  // 🔗 Передаємо faceMesh і avatar у listenUserSpeech.js
+  setAvatarContext(faceMesh, avatar);
 
-  const audioUrl = '/audio/intro-voice.mp3'; // ← тут буде ElevenLabs в майбутньому
+  const audioUrl = '/audio/intro-voice.mp3'; 
 
-   // запускаємо голос і передаємо старт idle-анімації як callback
+  // 🎙️ Відтворення голосу з мімікою + запуск idle-анімації після
   const duration = await playVoiceWithMimic(
     audioUrl,
     faceMesh,
@@ -18,7 +21,7 @@ export async function startIntroVoice(faceMesh, avatar) {
     () => startIdleFaceMovements(faceMesh, avatar)
   );
 
-  // показуємо кнопку за 5 сек до кінця
+  // ⏱️ Показуємо кнопку за 5 сек до кінця
   setTimeout(() => {
     promptMicrophoneAccess();
   }, (duration - 5) * 1000);

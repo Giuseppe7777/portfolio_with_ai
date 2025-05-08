@@ -1,8 +1,18 @@
+import { playVoiceWithMimic } from "../voice/playVoiceWithMimic";
 /**
  * Показує кнопку для дозволу на мікрофон і починає слухати, якщо користувач погодився
  */
 
 let isFirstMessage = true;
+let faceMesh = null;
+let avatar = null;
+let micStream = null;
+
+
+export function setAvatarContext(mesh, model) {
+  faceMesh = mesh;
+  avatar = model;
+}
 
 export function promptMicrophoneAccess() {
   const micBtn = document.createElement('button');
@@ -29,12 +39,12 @@ export function promptMicrophoneAccess() {
 
   micBtn.addEventListener('click', async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
       console.log('🎤 Доступ до мікрофона надано');
       micBtn.remove();
 
-      listenToSpeech(stream); // ⏳ Далі: слухаємо голос (реалізуємо окремо)
+      listenToSpeech(micStream); 
     } catch (err) {
       console.error('❌ Не вдалося отримати доступ до мікрофона:', err);
       alert('Мікрофон не активовано. Я не зможу тебе почути 😢');
@@ -169,7 +179,15 @@ function listenToSpeech(stream) {
       })
         .then(res => res.json())
         .then(data => {
-          console.log('📝 Speech-to-Text результат:', data);
+          if (data.status === 'error') {
+            console.error('⚠️ Speech-to-Text помилка:', data.message);
+            alert('Не вдалося розпізнати мову. Спробуй ще раз 😊');
+            return;
+          }
+        
+          lastUserText = data.text;
+          console.log('📌 Збережено текст користувача (наступне):', lastUserText);
+          handleFirstUserText(lastUserText);
         })
         .catch(err => console.error('❌ Speech-to-Text помилка:', err));
     }
@@ -218,18 +236,18 @@ function handleFirstUserText(text) {
           const audio = new Audio(audioURL);
 
           // Відтворюємо голос
-          audio.play().then(() => {
-            console.log('▶️ Голос відтворюється...');
-          }).catch(err => {
-            console.error('❌ Помилка відтворення голосу:', err);
-          });
-
-          // Запускаємо міміку (якщо реалізована)
-          if (typeof startMouthMovement === 'function') {
-            startMouthMovement(audio);
-            console.log('🗣️ Анімація рота активована');
+          if (faceMesh && avatar) {
+            console.log('🎭 Запускаємо playVoiceWithMimic() з мімікою');
+            playVoiceWithMimic(audioURL, faceMesh, avatar).then(() => {
+              console.log('🔁 Відповідь завершено. Повертаємось до прослуховування...');
+              listenToSpeech(micStream);
+            });
           } else {
-            console.warn('⚠️ Функція startMouthMovement не знайдена');
+            console.warn('⚠️ Немає faceMesh або avatar. Відтворюємо без міміки.');
+            const audio = new Audio(audioURL);
+            audio.play().then(() => {
+              console.log('▶️ Голос відтворюється (без міміки)...');
+            });
           }
         })
         .catch(err => {
