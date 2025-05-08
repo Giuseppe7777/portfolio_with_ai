@@ -183,5 +183,68 @@ function listenToSpeech(stream) {
 function handleFirstUserText(text) {
   console.log('🤖 Готуємо запит до GPT з текстом користувача:', text);
 
-  // Далі сюди вставимо GPT-запит (через proxy, callAPI або fetch)
+  fetch('http://localhost/my-portfolio-fullstack-ai/my-portfolio-fullstack-ai/php/questionAnswer.php', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ question: text })
+  })
+    .then(response => response.json())
+    .then(data => {
+      if (data.status === 'error') {
+        console.error('❌ GPT error:', data.message);
+        alert('GPT не відповів 😢');
+        return;
+      }
+
+      console.log('✅ GPT-відповідь:', data.answer);
+
+      fetch('http://localhost/my-portfolio-fullstack-ai/my-portfolio-fullstack-ai/php/tts.php', {
+        method: 'POST',
+        body: new URLSearchParams({ text: data.answer })
+      })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`🛑 HTTP error! status: ${response.status}`);
+          }
+          console.log('🔊 Отримано відповідь від tts.php (mp3 stream)');
+          return response.blob();
+        })
+        .then(audioBlob => {
+          console.log('📥 Отримано MP3-файл від ElevenLabs. Розмір:', audioBlob.size, 'байт');
+
+          const audioURL = URL.createObjectURL(audioBlob);
+          const audio = new Audio(audioURL);
+
+          // Відтворюємо голос
+          audio.play().then(() => {
+            console.log('▶️ Голос відтворюється...');
+          }).catch(err => {
+            console.error('❌ Помилка відтворення голосу:', err);
+          });
+
+          // Запускаємо міміку (якщо реалізована)
+          if (typeof startMouthMovement === 'function') {
+            startMouthMovement(audio);
+            console.log('🗣️ Анімація рота активована');
+          } else {
+            console.warn('⚠️ Функція startMouthMovement не знайдена');
+          }
+        })
+        .catch(err => {
+          console.error('❌ Помилка під час запиту до tts.php:', err);
+          alert('Не вдалося озвучити відповідь. Спробуй ще раз.');
+        });
+
+    })
+    .catch(err => {
+      console.error('❌ GPT fetch помилка:', err);
+      alert('Не вдалося отримати відповідь від GPT');
+    });
 }
+
+
+
+
+

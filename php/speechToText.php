@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['audio'])) {
     if ($error) {
         echo json_encode(['status' => 'error', 'message' => $error]);
     } else {
-        echo $response; // тут вже буде JSON з полем "text"
+        echo $response; 
     }
 
     exit;
