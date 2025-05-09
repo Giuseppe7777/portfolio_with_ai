@@ -11,7 +11,7 @@ export async function startIntroVoice(faceMesh, avatar) {
   // 🔗 Передаємо faceMesh і avatar у listenUserSpeech.js
   setAvatarContext(faceMesh, avatar);
 
-  const audioUrl = '/audio/intro-voice.mp3'; 
+  const audioUrl = '/audio/intro-voice-1.mp3'; 
 
   // 🎙️ Відтворення голосу з мімікою + запуск idle-анімації після
   const duration = await playVoiceWithMimic(
