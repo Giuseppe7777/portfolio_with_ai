@@ -66,6 +66,17 @@ export async function playVoiceWithMimic(audioUrl, faceMesh, avatar, onStartSpea
       context.resume();
       setTalking(true);
       onStartSpeaking();
+
+    // ⏱ Жест із затримкою (2.5 секунди + один кадр)
+      setTimeout(() => {
+      // requestAnimationFrame «обманює» кадр — камера вже відмалювала опущену руку
+        requestAnimationFrame(() => {
+          import('/src/gestures/gestureExplainWithHand.js')
+            .then(m => m.gestureExplainWithHand(avatar));
+        });
+      }, 2500);
+
+
       animate();
     }).catch(err => {
       console.error('🎵 Не вдалося програти аудіо:', err);
