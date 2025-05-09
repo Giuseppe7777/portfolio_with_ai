@@ -21,24 +21,40 @@ export function setupScene(container) {
 
   //  Рендерер — двигун, який виводить сцену на екран
   const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.setSize(container.clientWidth, container.clientHeight);
   renderer.setPixelRatio(window.devicePixelRatio);
   container.appendChild(renderer.domElement);
 
   //  Контролери — дозволяють керувати камерою мишкою
   const controls = new OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = true; // плавне обертання
+  controls.enableDamping = true; 
   controls.dampingFactor = 0.1;
-  controls.enablePan = false;    // заборона переміщення
-  controls.enableZoom = false;   // заборона зуму
-  controls.target.set(0, 1, 0);  // дивимось на голову
+  controls.enablePan = false;    
+  controls.enableZoom = false;   
+  controls.target.set(0, 1, 0);  
   controls.update();
+
+  const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(10, 10),
+  new THREE.ShadowMaterial({ opacity: 0.2 })
+  );
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = 0; // можеш підняти/опустити як потрібно
+  ground.receiveShadow = true;
+  scene.add(ground);
 
   //  Світло — освітлює сцену, важливо для 3D
   scene.add(new THREE.HemisphereLight(0xffffff, 0x222222, 0.6));
 
   const keyLight = new THREE.DirectionalLight(0xffffff, 3);
   keyLight.position.set(2, 4, 5);
+  keyLight.castShadow = true;
+  keyLight.shadow.mapSize.width = 1024;
+  keyLight.shadow.mapSize.height = 1024;
+  keyLight.shadow.camera.near = 0.5;
+  keyLight.shadow.camera.far = 20;
   scene.add(keyLight);
 
   const rimLight = new THREE.DirectionalLight(0xffffff, 1.5);

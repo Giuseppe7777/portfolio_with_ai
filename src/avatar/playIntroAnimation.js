@@ -12,12 +12,6 @@ export function playIntroAnimation(mixer, avatar, faceMesh) {
   action.paused = false;
   action.fadeIn(0.001);
 
-  // mixer.addEventListener('finished', () => {
-  //   import('./startIntroVoice.js').then(({ startIntroVoice }) => {
-  //     startIntroVoice(faceMesh, avatar);
-  //   });
-  // });
-
   // 🔹 Міміка — усмішка та м’який погляд
   if (faceMesh && faceMesh.morphTargetDictionary) {
     const dict = faceMesh.morphTargetDictionary;

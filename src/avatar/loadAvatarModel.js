@@ -14,7 +14,7 @@ export function loadAvatarModel(scene) {
       '/models/model-avatar-5-1.glb',
       (gltf) => {
         const avatar = gltf.scene;
-                // ===============================================================
+        // ===============================================================
 
         const armature = avatar.getObjectByProperty('type', 'Bone')?.parent;
           if (armature) {
@@ -27,6 +27,12 @@ export function loadAvatarModel(scene) {
         avatar.position.set(0, -3, -10);
         avatar.rotation.y = 0;
         scene.add(avatar);
+
+        avatar.traverse((object) => {
+          if (object.isMesh) {
+            object.castShadow = true;
+          }
+        });
 
         console.log('✅ GLB завантажено, avatar:', avatar);
         console.log('🧭 Оберт моделі:');

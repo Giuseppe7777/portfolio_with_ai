@@ -1,13 +1,12 @@
 import { playVoiceWithMimic } from "../voice/playVoiceWithMimic";
+
 /**
  * Показує кнопку для дозволу на мікрофон і починає слухати, якщо користувач погодився
  */
 
-let isFirstMessage = true;
 let faceMesh = null;
 let avatar = null;
 let micStream = null;
-
 
 export function setAvatarContext(mesh, model) {
   faceMesh = mesh;
@@ -19,7 +18,6 @@ export function promptMicrophoneAccess() {
   micBtn.textContent = '🎤 Allow microphone';
   micBtn.id = 'mic-permission-btn';
 
-  // Стилі — мінімальний гарний вигляд
   Object.assign(micBtn.style, {
     position: 'absolute',
     bottom: '70px',
@@ -44,7 +42,7 @@ export function promptMicrophoneAccess() {
       console.log('🎤 Доступ до мікрофона надано');
       micBtn.remove();
 
-      listenToSpeech(micStream); 
+      listenToSpeech(micStream);
     } catch (err) {
       console.error('❌ Не вдалося отримати доступ до мікрофона:', err);
       alert('Мікрофон не активовано. Я не зможу тебе почути 😢');
@@ -52,9 +50,6 @@ export function promptMicrophoneAccess() {
   });
 }
 
-/**
- * Записує голос користувача у форматі webm і виводить лог про запис
- */
 let lastUserText = '';
 
 function listenToSpeech(stream) {
@@ -90,25 +85,20 @@ function listenToSpeech(stream) {
       if (!speaking) {
         console.log('🔊 Користувач почав говорити');
         speaking = true;
-
-        // Видаляємо таймер на 10 сек, бо користувач заговорив
         if (initialSilenceTimer) {
           clearTimeout(initialSilenceTimer);
           initialSilenceTimer = null;
         }
       }
-
       lastSpokeTime = now;
-
-    } else if (speaking && lastSpokeTime && now - lastSpokeTime > 3000) {
-      console.log('🤐 Тиша понад 3 сек — зупиняємо запис');
+    } else if (speaking && lastSpokeTime && now - lastSpokeTime > 1000) {
+      console.log('🤐 Тиша понад 1 сек — зупиняємо запис');
       stopAll();
     }
   };
 
   const silenceInterval = setInterval(checkSilence, 200);
 
-  // Якщо користувач нічого не скаже протягом 10 секунд — зупиняємо
   initialSilenceTimer = setTimeout(() => {
     if (!speaking) {
       console.log('⌛ Нічого не сказав за 10 сек — зупиняємо запис');
@@ -130,82 +120,46 @@ function listenToSpeech(stream) {
 
   mediaRecorder.onstop = () => {
     const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-    console.log('✅ Запис завершено. Blob:', audioBlob);
-    console.log('🧾 Тип:', audioBlob.type, 'Розмір:', audioBlob.size, 'байт');
-
     const timestamp = new Date().toISOString();
+
+    console.log('✅ Запис завершено. Blob:', audioBlob);
     console.log('🕓 Timestamp запису:', timestamp);
 
     const formData = new FormData();
     formData.append('audio', audioBlob, `voice-${timestamp}.webm`);
     formData.append('timestamp', timestamp);
 
-    if (isFirstMessage) {
-      console.log('📨 Перше повідомлення: надсилаємо на пошту + Speech-to-Text');
+    console.log('📤 Відправляємо аудіо на розпізнавання мови...');
 
-      fetch('http://localhost/my-portfolio-fullstack-ai/my-portfolio-fullstack-ai/php/proxy.php', {
-        method: 'POST',
-        body: formData
+    fetch('http://localhost/my-portfolio-fullstack-ai/my-portfolio-fullstack-ai/php/speechToText.php', {
+      method: 'POST',
+      body: formData
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.status === 'error') {
+          console.error('⚠️ Помилка від speechToText.php:', data.message);
+          alert('Не вдалося розпізнати мову. Спробуй ще раз 😊');
+          return;
+        }
+
+        lastUserText = data.text;
+        console.log('📌 Збережено текст користувача:', lastUserText);
+        handleFirstUserText(lastUserText);
       })
-        .then(response => response.json())
-        .then(data => console.log('📬 Відповідь від proxy.php (email):', data))
-        .catch(error => console.error('❌ Email error:', error));
-
-      fetch('http://localhost/my-portfolio-fullstack-ai/my-portfolio-fullstack-ai/php/speechToText.php', {
-        method: 'POST',
-        body: formData
-      })
-        .then(res => res.json())
-        .then(data => {
-          if (data.status === 'error') {
-            console.error('⚠️ Помилка від speechToText.php:', data.message);
-            alert('Не вдалося розпізнати мову. Спробуй ще раз 😊');
-            return;
-          }
-
-          lastUserText = data.text;
-          console.log('📌 Збережено текст користувача:', lastUserText);
-          handleFirstUserText(lastUserText);
-        })
-        .catch(err => console.error('❌ Speech-to-Text помилка:', err));
-
-      isFirstMessage = false;
-    } else {
-      console.log('🗣️ Наступне повідомлення: тільки Speech-to-Text');
-
-      fetch('http://localhost/my-portfolio-fullstack-ai/my-portfolio-fullstack-ai/php/speechToText.php', {
-        method: 'POST',
-        body: formData
-      })
-        .then(res => res.json())
-        .then(data => {
-          if (data.status === 'error') {
-            console.error('⚠️ Speech-to-Text помилка:', data.message);
-            alert('Не вдалося розпізнати мову. Спробуй ще раз 😊');
-            return;
-          }
-        
-          lastUserText = data.text;
-          console.log('📌 Збережено текст користувача (наступне):', lastUserText);
-          handleFirstUserText(lastUserText);
-        })
-        .catch(err => console.error('❌ Speech-to-Text помилка:', err));
-    }
+      .catch(err => console.error('❌ Speech-to-Text помилка:', err));
   };
 
   mediaRecorder.start();
   console.log('⏺️ Запис запущено');
 }
 
-
 function handleFirstUserText(text) {
   console.log('🤖 Готуємо запит до GPT з текстом користувача:', text);
 
   fetch('http://localhost/my-portfolio-fullstack-ai/my-portfolio-fullstack-ai/php/questionAnswer.php', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ question: text })
   })
     .then(response => response.json())
@@ -223,28 +177,19 @@ function handleFirstUserText(text) {
         body: new URLSearchParams({ text: data.answer })
       })
         .then(response => {
-          if (!response.ok) {
-            throw new Error(`🛑 HTTP error! status: ${response.status}`);
-          }
-          console.log('🔊 Отримано відповідь від tts.php (mp3 stream)');
+          if (!response.ok) throw new Error(`🛑 HTTP error! status: ${response.status}`);
           return response.blob();
         })
         .then(audioBlob => {
-          console.log('📥 Отримано MP3-файл від ElevenLabs. Розмір:', audioBlob.size, 'байт');
-
           const audioURL = URL.createObjectURL(audioBlob);
           const audio = new Audio(audioURL);
 
-          // Відтворюємо голос
           if (faceMesh && avatar) {
-            console.log('🎭 Запускаємо playVoiceWithMimic() з мімікою');
             playVoiceWithMimic(audioURL, faceMesh, avatar).then(() => {
               console.log('🔁 Відповідь завершено. Повертаємось до прослуховування...');
               listenToSpeech(micStream);
             });
           } else {
-            console.warn('⚠️ Немає faceMesh або avatar. Відтворюємо без міміки.');
-            const audio = new Audio(audioURL);
             audio.play().then(() => {
               console.log('▶️ Голос відтворюється (без міміки)...');
             });
@@ -254,15 +199,9 @@ function handleFirstUserText(text) {
           console.error('❌ Помилка під час запиту до tts.php:', err);
           alert('Не вдалося озвучити відповідь. Спробуй ще раз.');
         });
-
     })
     .catch(err => {
       console.error('❌ GPT fetch помилка:', err);
       alert('Не вдалося отримати відповідь від GPT');
     });
 }
-
-
-
-
-
