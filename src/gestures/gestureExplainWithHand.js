@@ -56,7 +56,7 @@ export function gestureExplainWithHand(avatar) {
 
   // === ФАЗА 2: підняття руки
   function raiseAndRotate() {
-    const steps = 60;
+    const steps = 35;
     let frame = 0;
 
     const fromArm = startPose.arm;
@@ -88,7 +88,7 @@ export function gestureExplainWithHand(avatar) {
   // === ФАЗА 3: оберт передпліччя
   function orbitForeArm() {
     const radius = 0.3;
-    const speed = 0.05;
+    const speed = 0.1;
     let t = 0;
 
     const originalQuat = rFore.quaternion.clone();
@@ -109,7 +109,7 @@ export function gestureExplainWithHand(avatar) {
 
       rFore.quaternion.copy(resultQuat);
 
-      if (t < Math.PI * 3) { // 🔁 1.5 оберта
+      if (t < Math.PI * 1.8) { // 🔁 к-сть обертів
         requestAnimationFrame(spin);
       } else {
         resetForeArm();

@@ -1,6 +1,8 @@
 
 import * as THREE from 'three';
 
+// функція робить під час говоріння аватара рух головою. тілом (окрім осі y) а також піднімає ліву руку на талію
+
 export function startSpeakingBodyMovements(faceMesh, avatar) {
   const infl = faceMesh.morphTargetInfluences;
   const dict = faceMesh.morphTargetDictionary;

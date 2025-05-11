@@ -72,6 +72,9 @@ export function loadAvatarModel(scene) {
         // 🔸 FaceMesh для міміки
         const faceMesh = avatar.getObjectByName('Body_1');
 
+        // 👇 Робить avatar доступним у консолі
+          window.avatar = avatar;
+
         // Shape Keys ==========================================================
         
         // if (faceMesh && faceMesh.morphTargetDictionary) {

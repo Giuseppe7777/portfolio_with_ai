@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { setTalking } from '../avatar/state';
 import { startSpeakingBodyMovements } from '../avatar/speakingMimic.js';
+import { resetRightHandPose } from '../avatar/utils/resetRightHandPose.js';
 
 /**
  * Програє озвучку тексту та анімує рот через гучність аудіо
@@ -71,12 +72,21 @@ export async function playVoiceWithMimic(audioUrl, faceMesh, avatar, onStartSpea
       setTalking(true);
       onStartSpeaking();
 
-    // ⏱ Жест із затримкою (2.5 секунди + один кадр)
+    // Жест крутіння рукою)
+      // setTimeout(() => {
+      //   requestAnimationFrame(() => {
+      //     resetRightHandPose(avatar); 
+      //     import('/src/gestures/gestureExplainWithHand.js')
+      //       .then(m => m.gestureExplainWithHand(avatar));
+      //   });
+      // }, 2500);
+
+      // Жест Увага!!! великий палець)
       setTimeout(() => {
-      // requestAnimationFrame «обманює» кадр — камера вже відмалювала опущену руку
         requestAnimationFrame(() => {
-          import('/src/gestures/gestureExplainWithHand.js')
-            .then(m => m.gestureExplainWithHand(avatar));
+          resetRightHandPose(avatar); 
+          import('/src/gestures/gestureAttentionWithFinger.js')
+            .then(m => m.gestureAttentionWithFinger(avatar));
         });
       }, 2500);
 
