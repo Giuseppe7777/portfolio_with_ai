@@ -73,13 +73,13 @@ export async function playVoiceWithMimic(audioUrl, faceMesh, avatar, onStartSpea
       onStartSpeaking();
 
     // Жест крутіння рукою)
-      // setTimeout(() => {
-      //   requestAnimationFrame(() => {
-      //     resetRightHandPose(avatar); 
-      //     import('/src/gestures/gestureExplainWithHand.js')
-      //       .then(m => m.gestureExplainWithHand(avatar));
-      //   });
-      // }, 2500);
+      setTimeout(() => {
+        requestAnimationFrame(() => {
+          resetRightHandPose(avatar); 
+          import('/src/gestures/gestureExplainWithHand.js')
+            .then(m => m.gestureExplainWithHand(avatar));
+        });
+      }, 2500);
 
       // Жест Увага!!! великий палець)
       setTimeout(() => {
@@ -88,7 +88,7 @@ export async function playVoiceWithMimic(audioUrl, faceMesh, avatar, onStartSpea
           import('/src/gestures/gestureAttentionWithFinger.js')
             .then(m => m.gestureAttentionWithFinger(avatar));
         });
-      }, 2500);
+      }, 6500);
 
 
       animate();

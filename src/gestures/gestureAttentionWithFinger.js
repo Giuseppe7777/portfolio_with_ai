@@ -1,4 +1,3 @@
-
 // src/gestures/gestureAttentionWithFinger.js
 import * as THREE from 'three';
 
@@ -38,23 +37,22 @@ export function gestureAttentionWithFinger(avatar) {
   t2.rotation.order = 'XYZ';
   t3.rotation.order = 'XYZ';
 
-  const targetArm  = new THREE.Euler(2.100, 0.800, -1.100);
-  const targetFore = new THREE.Euler(1.900, -0.900, -0.300);
-  const targetHand = new THREE.Euler(1.012, -0.977, -0.855);
+  const targetArm  = new THREE.Euler(2.100, 1.000, -1.100);
+  const targetFore = new THREE.Euler(1.500, -0.900, -0.600);
+  const targetHand = new THREE.Euler(-0.212, -0.777, -0.655);
 
   const fingers = {
-    t1: new THREE.Euler(0.209, -0.140, 0.436),
-    t2: new THREE.Euler(0.000, 0.000, 0.227),
-    t3: new THREE.Euler(-0.000, -0.000, 0.262),
-    i1: new THREE.Euler(1.523, 0.789, 0.338),
-    m1: new THREE.Euler(1.012, -0.977, -0.855),
-    m2: new THREE.Euler(0.209, -0.140, 0.052),
-    m3: new THREE.Euler(0.000, 0.000, 0.611),
-    r1: new THREE.Euler(-0.052, 0.105, -0.052),
-    r2: new THREE.Euler(1.221, -0.454, 1.605),
+    t1: new THREE.Euler(0.061, 0.340, -0.356),
+    t2: new THREE.Euler(0.000, 0.100, 0.027),
+    t3: new THREE.Euler(0.000, 0.100, 0.927),
+    m1: new THREE.Euler(0.321, 0.800, 0.017),
+    m2: new THREE.Euler(2.770, 0.000, 0.211),
+    m3: new THREE.Euler(0.000, 0.000, 0.011),
+    r1: new THREE.Euler(0.321, 0.800, 0.017),
+    r2: new THREE.Euler(2.570, 0.000, 0.211),
     r3: new THREE.Euler(-0.105, -0.646, 0.052),
-    p1: new THREE.Euler(2.321, 0.000, 0.017),
-    p2: new THREE.Euler(0.000, 0.000, 0.611),
+    p1: new THREE.Euler(0.321, 0.800, 0.017),
+    p2: new THREE.Euler(2.700, 0.000, 0.211),
   };
 
   function raiseHandAndPose() {
@@ -67,7 +65,7 @@ export function gestureAttentionWithFinger(avatar) {
 
     const fromFingers = {};
     for (const key in fingers) {
-      const bone = eval(key); // t1, t2, i1 etc.
+      const bone = eval(key);
       fromFingers[key] = bone.rotation.clone();
     }
 
@@ -97,26 +95,28 @@ export function gestureAttentionWithFinger(avatar) {
         frame++;
         requestAnimationFrame(animate);
       } else {
-        wagIndexFinger();
+        wagHandZ(() => resetToNeutral());
       }
     }
 
     animate();
   }
 
-  function wagIndexFinger() {
+  function wagHandZ(callback) {
     let frame = 0;
-    const steps = 25;
-    const amplitude = 0.2;
-    const repeats = 3;
+    const steps = 20;
+    const amplitude = 0.15;
+    const repeats = 2;
     let count = 0;
 
-    const baseRot = i1.rotation.clone();
+    const minZ = -0.755;
+    const maxZ = -0.455;
+    const base = rHand.rotation.z;
 
     function animate() {
       if (count < repeats) {
-        const angle = Math.sin((frame / steps) * Math.PI) * amplitude;
-        i1.rotation.x = baseRot.x + angle;
+        const angle = Math.sin((frame / steps) * Math.PI) * (maxZ - minZ) / 2;
+        rHand.rotation.z = base + angle;
 
         frame++;
         if (frame <= steps) {
@@ -126,6 +126,44 @@ export function gestureAttentionWithFinger(avatar) {
           count++;
           requestAnimationFrame(animate);
         }
+      } else if (callback) {
+        callback();
+      }
+    }
+
+    animate();
+  }
+
+  function resetToNeutral() {
+    const steps = 30;
+    let frame = 0;
+
+    const neutralArm = new THREE.Euler(0.969, 0.460, -0.219);
+    const neutralFore = new THREE.Euler(0.418, 0.248, 0.082);
+    const neutralHand = new THREE.Euler(0.813, -0.914, 0.901);
+
+    const fromArm = rArm.rotation.clone();
+    const fromFore = rFore.rotation.clone();
+    const fromHand = rHand.rotation.clone();
+
+    function animate() {
+      if (frame <= steps) {
+        const alpha = frame / steps;
+
+        rArm.rotation.x = THREE.MathUtils.lerp(fromArm.x, neutralArm.x, alpha);
+        rArm.rotation.y = THREE.MathUtils.lerp(fromArm.y, neutralArm.y, alpha);
+        rArm.rotation.z = THREE.MathUtils.lerp(fromArm.z, neutralArm.z, alpha);
+
+        rFore.rotation.x = THREE.MathUtils.lerp(fromFore.x, neutralFore.x, alpha);
+        rFore.rotation.y = THREE.MathUtils.lerp(fromFore.y, neutralFore.y, alpha);
+        rFore.rotation.z = THREE.MathUtils.lerp(fromFore.z, neutralFore.z, alpha);
+
+        rHand.rotation.x = THREE.MathUtils.lerp(fromHand.x, neutralHand.x, alpha);
+        rHand.rotation.y = THREE.MathUtils.lerp(fromHand.y, neutralHand.y, alpha);
+        rHand.rotation.z = THREE.MathUtils.lerp(fromHand.z, neutralHand.z, alpha);
+
+        frame++;
+        requestAnimationFrame(animate);
       }
     }
 
@@ -134,6 +172,29 @@ export function gestureAttentionWithFinger(avatar) {
 
   raiseHandAndPose();
 }
+
+window.poseControl = {
+    set(boneName, x, y, z) {
+      const bone = avatar.getObjectByName(boneName);
+      if (!bone) return console.warn(` Кістка ${boneName} не знайдена`);
+      bone.rotation.set(x, y, z);
+      console.log(`✅ ${boneName} встановлено → X=${x.toFixed(3)}, Y=${y.toFixed(3)}, Z=${z.toFixed(3)}`);
+    },
+    get(boneName) {
+      const bone = avatar.getObjectByName(boneName);
+      if (!bone) return console.warn(` Кістка ${boneName} не знайдена`);
+      const r = bone.rotation;
+      console.log(`📍 ${boneName} → X=${r.x.toFixed(3)}, Y=${r.y.toFixed(3)}, Z=${r.z.toFixed(3)}`);
+    },
+    list() {
+      const bones = {};
+      avatar.traverse(obj => {
+        if (obj.isBone) bones[obj.name] = obj;
+      });
+      console.log("🦴 Доступні кістки:");
+      console.table(Object.keys(bones));
+    }
+  };
 
 
 window.poseControl = {
@@ -215,19 +276,16 @@ poseControl.set('mixamorigRightHandPinky1',   0, 0, 0); // мізинець
 poseControl.set('mixamorigRightArm',       1.100, 0.800, -0.100); 
 
 
-poseControl.set('mixamorigRightArm',        1.524, 0.789, 0.338);   // 87.308°, 45.167°, 19.361°
-poseControl.set('mixamorigRightForeArm',    1.544, 1.291, -0.171);  // 88.5°, 74°, -9.8°
-poseControl.set('mixamorigRightHand',       1.012, -0.977, -0.855); // 58°, -56°, -49°
+poseControl.set('mixamorigRightArm',        1.524, 0.789, 0.338);   
+poseControl.set('mixamorigRightForeArm',    1.544, 1.291, -0.171);  
+poseControl.set('mixamorigRightHand',       1.012, -0.977, -0.855); 
 
-// 👍 Великий палець
-poseControl.set('mixamorigRightHandThumb1', 0.209, -0.140, 0.436);  // 12°, -8°, 25°
-poseControl.set('mixamorigRightHandThumb2', 0.000, 0.000, 0.227);   // ≈0°, ≈0°, 13°
+poseControl.set('mixamorigRightHandThumb1', 0.209, -0.140, 0.436);  
+poseControl.set('mixamorigRightHandThumb2', 0.000, 0.000, 0.227);   
 
-// ☝️ Вказівний
-poseControl.set('mixamorigRightHandIndex1',   1.523, 0.789, 0.338); // скрін 1 (повтор)
+poseControl.set('mixamorigRightHandIndex1',   1.523, 0.789, 0.338); 
 
 
-// ✊ Інші пальці
 poseControl.set('mixamorigRightHandMiddle1',  1.012, -0.977, -0.855);
 poseControl.set('mixamorigRightHandMiddle2',  0.209, -0.140, 0.052);
 poseControl.set('mixamorigRightHandMiddle3',  0.000, 0.000, 0.611);
