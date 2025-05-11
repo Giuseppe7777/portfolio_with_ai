@@ -2,6 +2,7 @@
 
 import * as THREE from 'three';
 import { setTalking } from '../avatar/state';
+import { startSpeakingBodyMovements } from '../avatar/speakingMimic.js';
 
 /**
  * Програє озвучку тексту та анімує рот через гучність аудіо
@@ -61,6 +62,9 @@ export async function playVoiceWithMimic(audioUrl, faceMesh, avatar, onStartSpea
     await new Promise(resolve => {
       audio.addEventListener('loadedmetadata', resolve);
     });
+
+    // 🔹 Додаємо живі рухи тіла до голосу
+    startSpeakingBodyMovements(faceMesh, avatar);
 
     audio.play().then(() => {
       context.resume();

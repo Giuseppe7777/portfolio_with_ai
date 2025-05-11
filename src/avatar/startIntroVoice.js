@@ -28,29 +28,3 @@ export async function startIntroVoice(faceMesh, avatar) {
 }
 
 
-// import { playVoiceWithMimic } from '../voice/playVoiceWithMimic.js';
-// import { promptMicrophoneAccess, setAvatarContext } from './listenUserSpeech.js';
-
-// export async function startIntroVoice(faceMesh, avatar) {
-//   setAvatarContext(faceMesh, avatar);
-
-// //===========================================================
-// window.avatar = avatar; 
-// //===========================================================
-
-//   const audioUrl = '/audio/intro-voice-1.mp3';
-
-//   const duration = await playVoiceWithMimic(
-//     audioUrl,
-//     faceMesh,
-//     avatar,
-//     () => {
-//       // 🔕 Не викликаємо startIdleFaceMovements
-//       console.log('🧘‍♀️ Idle mimic тимчасово вимкнено');
-//     }
-//   );
-
-//   setTimeout(() => {
-//     promptMicrophoneAccess();
-//   }, (duration - 5) * 1000);
-// }
