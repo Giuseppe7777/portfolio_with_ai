@@ -56,11 +56,10 @@ export async function playVoiceWithMimic(audioUrl, faceMesh, avatar, onStartSpea
         infl[mouthIndex] = 0;
         jaw.rotation.x = baseJaw;
         setTalking(false);
-        
+
         // ✋ Підняття ПРАВОЇ руки — після говоріння
         import('/src/gestures/gestureRightHandOnWaist.js')
           .then(m => m.gestureRightHandOnWaist(avatar)); 
-
         resolve(); // 🔁 Завершення — важливо для циклу
       }
     };
@@ -70,6 +69,7 @@ export async function playVoiceWithMimic(audioUrl, faceMesh, avatar, onStartSpea
     });
 
     // 🔹 Додаємо живі рухи тіла до голосу
+    window.stopIdleMimic = true;
     movementsAndMimicWhileTalking(faceMesh, avatar);
 
     audio
@@ -119,3 +119,5 @@ export async function playVoiceWithMimic(audioUrl, faceMesh, avatar, onStartSpea
       });
   });
 }
+
+

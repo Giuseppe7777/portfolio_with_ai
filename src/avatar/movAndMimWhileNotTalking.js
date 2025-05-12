@@ -1,4 +1,4 @@
-// src/avatar/movementsAndMimicWhileNotTalking.js
+
 import * as THREE from 'three';
 import { isTalking } from './state';
 
@@ -8,9 +8,6 @@ export function movementsAndMimicWhileNotTalking(faceMesh, avatar) {
 
   const smileL = dict['A38_Mouth_Smile_Left'];
   const smileR = dict['A39_Mouth_Smile_Right'];
-  const browUp = dict['A06_Brow_Up'];
-  const squintL = dict['A16_Eye_Squint_Left'];
-  const squintR = dict['A17_Eye_Squint_Right'];
 
   setInterval(() => {
     if (!infl) return;
@@ -53,3 +50,4 @@ export function movementsAndMimicWhileNotTalking(faceMesh, avatar) {
 
   animate();
 }
+

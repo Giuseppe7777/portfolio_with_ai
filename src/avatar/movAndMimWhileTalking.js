@@ -59,7 +59,6 @@ export function movementsAndMimicWhileTalking(faceMesh, avatar) {
 
   if (spine1) {
     spine1.rotation.z = Math.sin(t * 0.25) * 0.06;
-    spine1.rotation.y = Math.sin(t * 0.25) * 0.2;
   }
 }
 
