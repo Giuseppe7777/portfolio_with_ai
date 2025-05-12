@@ -2,9 +2,9 @@
 import * as THREE from 'three';
 
 /**
- * Піднімає праву руку на талію з пальцями (жест "рука на поясі")
- * @param {THREE.Object3D} avatar - повна 3D-модель
- * @param {number} durationMs - тривалість анімації у мс (за замовчуванням 600)
+ * Піднімає праву руку на талію з повною позою пальців
+ * @param {THREE.Object3D} avatar
+ * @param {number} durationMs - час анімації (за замовчуванням 600мс)
  */
 export function gestureRightHandOnWaist(avatar, durationMs = 600) {
   const rArm = avatar.getObjectByName('mixamorigRightArm');
@@ -20,8 +20,27 @@ export function gestureRightHandOnWaist(avatar, durationMs = 600) {
 
   if (!rArm || !rFore || !rHand) return;
 
-  const steps = Math.round(durationMs / (1000 / 60));
-  let frame = 0;
+  rArm.rotation.order = 'XYZ';
+  rFore.rotation.order = 'XYZ';
+  rHand.rotation.order = 'XYZ';
+  t1 && (t1.rotation.order = 'XYZ');
+  t2 && (t2.rotation.order = 'XYZ');
+  i1 && (i1.rotation.order = 'XYZ');
+  m1 && (m1.rotation.order = 'XYZ');
+  r1 && (r1.rotation.order = 'XYZ');
+  p1 && (p1.rotation.order = 'XYZ');
+
+  const toQuat = {
+    arm: new THREE.Quaternion().setFromEuler(new THREE.Euler(3.571, -3.042, -3.089)),
+    fore: new THREE.Quaternion().setFromEuler(new THREE.Euler(0.116, -1.364, -1.170)),
+    hand: new THREE.Quaternion().setFromEuler(new THREE.Euler(-1.325, -0.544, -1.227)),
+    t1: new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.927, 0.140, -0.070)),
+    t2: new THREE.Quaternion().setFromEuler(new THREE.Euler(0.000, -0.052, -0.925)),
+    i1: new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.733, 0.000, 0.646)),
+    m1: new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.611, 0.000, 0.489)),
+    r1: new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.471, -0.157, 0.384)),
+    p1: new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.454, 0.087, 0.070)),
+  };
 
   const fromQuat = {
     arm: rArm.quaternion.clone(),
@@ -35,19 +54,8 @@ export function gestureRightHandOnWaist(avatar, durationMs = 600) {
     p1: p1?.quaternion.clone(),
   };
 
-  const toQuat = {
-    arm: new THREE.Quaternion().setFromEuler(new THREE.Euler(3.571, -3.042, -3.089)),
-    fore: new THREE.Quaternion().setFromEuler(new THREE.Euler(0.116, -1.364, -1.170)),
-    hand: new THREE.Quaternion().setFromEuler(new THREE.Euler(-1.325, -0.544, -1.227)),
-
-    t1: new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.927, 0.140, -0.070)),
-    t2: new THREE.Quaternion().setFromEuler(new THREE.Euler(0.000, -0.052, -0.925)),
-
-    i1: new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.733, 0.000, 0.646)),
-    m1: new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.611, 0.000, 0.489)),
-    r1: new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.471, -0.157, 0.384)),
-    p1: new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.454, 0.087, 0.070)),
-  };
+  const steps = Math.round(durationMs / (1000 / 60));
+  let frame = 0;
 
   function animate() {
     if (frame <= steps) {
