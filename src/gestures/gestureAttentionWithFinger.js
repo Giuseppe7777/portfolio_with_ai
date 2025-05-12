@@ -1,5 +1,6 @@
-// src/gestures/gestureAttentionWithFinger.js
+
 import * as THREE from 'three';
+import { resetRightHandPoseSmooth } from '../avatar/utils/resetRightHandPose.js';
 
 export function gestureAttentionWithFinger(avatar) {
   const rArm = avatar.getObjectByName('mixamorigRightArm');
@@ -95,7 +96,9 @@ export function gestureAttentionWithFinger(avatar) {
         frame++;
         requestAnimationFrame(animate);
       } else {
-        wagHandZ(() => resetToNeutral());
+        wagHandZ(() => {
+          resetRightHandPoseSmooth(avatar, 700); // 700 мс — плавне повернення
+        });
       }
     }
 
@@ -134,68 +137,8 @@ export function gestureAttentionWithFinger(avatar) {
     animate();
   }
 
-  function resetToNeutral() {
-    const steps = 30;
-    let frame = 0;
-
-    const neutralArm = new THREE.Euler(0.969, 0.460, -0.219);
-    const neutralFore = new THREE.Euler(0.418, 0.248, 0.082);
-    const neutralHand = new THREE.Euler(0.813, -0.914, 0.901);
-
-    const fromArm = rArm.rotation.clone();
-    const fromFore = rFore.rotation.clone();
-    const fromHand = rHand.rotation.clone();
-
-    function animate() {
-      if (frame <= steps) {
-        const alpha = frame / steps;
-
-        rArm.rotation.x = THREE.MathUtils.lerp(fromArm.x, neutralArm.x, alpha);
-        rArm.rotation.y = THREE.MathUtils.lerp(fromArm.y, neutralArm.y, alpha);
-        rArm.rotation.z = THREE.MathUtils.lerp(fromArm.z, neutralArm.z, alpha);
-
-        rFore.rotation.x = THREE.MathUtils.lerp(fromFore.x, neutralFore.x, alpha);
-        rFore.rotation.y = THREE.MathUtils.lerp(fromFore.y, neutralFore.y, alpha);
-        rFore.rotation.z = THREE.MathUtils.lerp(fromFore.z, neutralFore.z, alpha);
-
-        rHand.rotation.x = THREE.MathUtils.lerp(fromHand.x, neutralHand.x, alpha);
-        rHand.rotation.y = THREE.MathUtils.lerp(fromHand.y, neutralHand.y, alpha);
-        rHand.rotation.z = THREE.MathUtils.lerp(fromHand.z, neutralHand.z, alpha);
-
-        frame++;
-        requestAnimationFrame(animate);
-      }
-    }
-
-    animate();
-  }
-
   raiseHandAndPose();
 }
-
-window.poseControl = {
-    set(boneName, x, y, z) {
-      const bone = avatar.getObjectByName(boneName);
-      if (!bone) return console.warn(` Кістка ${boneName} не знайдена`);
-      bone.rotation.set(x, y, z);
-      console.log(`✅ ${boneName} встановлено → X=${x.toFixed(3)}, Y=${y.toFixed(3)}, Z=${z.toFixed(3)}`);
-    },
-    get(boneName) {
-      const bone = avatar.getObjectByName(boneName);
-      if (!bone) return console.warn(` Кістка ${boneName} не знайдена`);
-      const r = bone.rotation;
-      console.log(`📍 ${boneName} → X=${r.x.toFixed(3)}, Y=${r.y.toFixed(3)}, Z=${r.z.toFixed(3)}`);
-    },
-    list() {
-      const bones = {};
-      avatar.traverse(obj => {
-        if (obj.isBone) bones[obj.name] = obj;
-      });
-      console.log("🦴 Доступні кістки:");
-      console.table(Object.keys(bones));
-    }
-  };
-
 
 window.poseControl = {
     set(boneName, x, y, z) {

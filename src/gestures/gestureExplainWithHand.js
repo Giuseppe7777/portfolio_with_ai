@@ -1,4 +1,6 @@
+// src/gestures/gestureExplainWithHand.js
 import * as THREE from 'three';
+import { resetRightHandPoseSmooth } from '../avatar/utils/resetRightHandPose.js';
 
 export function gestureExplainWithHand(avatar) {
   const rArm = avatar.getObjectByName('mixamorigRightArm');
@@ -32,17 +34,19 @@ export function gestureExplainWithHand(avatar) {
 
     function animate() {
       if (frame < steps) {
-        rArm.rotation.x = THREE.MathUtils.lerp(fromArm.x, startPose.arm.x, frame / steps);
-        rArm.rotation.y = THREE.MathUtils.lerp(fromArm.y, startPose.arm.y, frame / steps);
-        rArm.rotation.z = THREE.MathUtils.lerp(fromArm.z, startPose.arm.z, frame / steps);
+        const alpha = frame / steps;
 
-        rFore.rotation.x = THREE.MathUtils.lerp(fromFore.x, startPose.fore.x, frame / steps);
-        rFore.rotation.y = THREE.MathUtils.lerp(fromFore.y, startPose.fore.y, frame / steps);
-        rFore.rotation.z = THREE.MathUtils.lerp(fromFore.z, startPose.fore.z, frame / steps);
+        rArm.rotation.x = THREE.MathUtils.lerp(fromArm.x, startPose.arm.x, alpha);
+        rArm.rotation.y = THREE.MathUtils.lerp(fromArm.y, startPose.arm.y, alpha);
+        rArm.rotation.z = THREE.MathUtils.lerp(fromArm.z, startPose.arm.z, alpha);
 
-        rHand.rotation.x = THREE.MathUtils.lerp(fromHand.x, startPose.hand.x, frame / steps);
-        rHand.rotation.y = THREE.MathUtils.lerp(fromHand.y, startPose.hand.y, frame / steps);
-        rHand.rotation.z = THREE.MathUtils.lerp(fromHand.z, startPose.hand.z, frame / steps);
+        rFore.rotation.x = THREE.MathUtils.lerp(fromFore.x, startPose.fore.x, alpha);
+        rFore.rotation.y = THREE.MathUtils.lerp(fromFore.y, startPose.fore.y, alpha);
+        rFore.rotation.z = THREE.MathUtils.lerp(fromFore.z, startPose.fore.z, alpha);
+
+        rHand.rotation.x = THREE.MathUtils.lerp(fromHand.x, startPose.hand.x, alpha);
+        rHand.rotation.y = THREE.MathUtils.lerp(fromHand.y, startPose.hand.y, alpha);
+        rHand.rotation.z = THREE.MathUtils.lerp(fromHand.z, startPose.hand.z, alpha);
 
         frame++;
         requestAnimationFrame(animate);
@@ -65,15 +69,17 @@ export function gestureExplainWithHand(avatar) {
 
     function animate() {
       if (frame < steps) {
-        rArm.rotation.x = THREE.MathUtils.lerp(fromArm.x, targetArm.x, frame / steps);
-        rArm.rotation.y = THREE.MathUtils.lerp(fromArm.y, targetArm.y, frame / steps);
-        rArm.rotation.z = THREE.MathUtils.lerp(fromArm.z, targetArm.z, frame / steps);
+        const alpha = frame / steps;
 
-        rFore.rotation.x = THREE.MathUtils.lerp(fromFore.x, targetFore.x, frame / steps);
-        rFore.rotation.y = THREE.MathUtils.lerp(fromFore.y, targetFore.y, frame / steps);
-        rFore.rotation.z = THREE.MathUtils.lerp(fromFore.z, targetFore.z, frame / steps);
+        rArm.rotation.x = THREE.MathUtils.lerp(fromArm.x, targetArm.x, alpha);
+        rArm.rotation.y = THREE.MathUtils.lerp(fromArm.y, targetArm.y, alpha);
+        rArm.rotation.z = THREE.MathUtils.lerp(fromArm.z, targetArm.z, alpha);
 
-        rHand.rotation.copy(fromHand); // не змінюємо кисть
+        rFore.rotation.x = THREE.MathUtils.lerp(fromFore.x, targetFore.x, alpha);
+        rFore.rotation.y = THREE.MathUtils.lerp(fromFore.y, targetFore.y, alpha);
+        rFore.rotation.z = THREE.MathUtils.lerp(fromFore.z, targetFore.z, alpha);
+
+        rHand.rotation.copy(fromHand); // кисть залишається без змін
 
         frame++;
         requestAnimationFrame(animate);
@@ -87,71 +93,29 @@ export function gestureExplainWithHand(avatar) {
 
   // === ФАЗА 3: оберт передпліччя
   function orbitForeArm() {
-    const radius = 0.3;
     const speed = 0.1;
     let t = 0;
 
     const originalQuat = rFore.quaternion.clone();
 
-    const spin = () => {
+    function spin() {
       t += speed;
       const angle = t;
 
-      const axis = new THREE.Vector3(
-        Math.sin(angle),
-        0,
-        Math.cos(angle)
-      ).normalize();
-
-      const quat = new THREE.Quaternion();
-      quat.setFromAxisAngle(axis, 0.2);
+      const axis = new THREE.Vector3(Math.sin(angle), 0, Math.cos(angle)).normalize();
+      const quat = new THREE.Quaternion().setFromAxisAngle(axis, 0.2);
       const resultQuat = originalQuat.clone().multiply(quat);
 
       rFore.quaternion.copy(resultQuat);
 
-      if (t < Math.PI * 1.8) { // 🔁 к-сть обертів
+      if (t < Math.PI * 1.8) {
         requestAnimationFrame(spin);
       } else {
-        resetForeArm();
+        resetRightHandPoseSmooth(avatar, 700); // ✅ Плавне повернення
       }
-    };
+    }
 
     spin();
-  }
-
-  // === ФІНАЛ: повернення в нейтральну позу
-  function resetForeArm() {
-    const steps = 40;
-    let frame = 0;
-
-    const startArm = rArm.rotation.clone();
-    const startFore = rFore.rotation.clone();
-    const startHand = rHand.rotation.clone();
-
-    const neutralArm  = new THREE.Euler(0.969, 0.460, -0.219);
-    const neutralFore = new THREE.Euler(0.418, 0.248, 0.082);
-    const neutralHand = new THREE.Euler(0.813, -0.914, 0.901);
-
-    const animate = () => {
-      if (frame < steps) {
-        rArm.rotation.x = THREE.MathUtils.lerp(startArm.x, neutralArm.x, frame / steps);
-        rArm.rotation.y = THREE.MathUtils.lerp(startArm.y, neutralArm.y, frame / steps);
-        rArm.rotation.z = THREE.MathUtils.lerp(startArm.z, neutralArm.z, frame / steps);
-
-        rFore.rotation.x = THREE.MathUtils.lerp(startFore.x, neutralFore.x, frame / steps);
-        rFore.rotation.y = THREE.MathUtils.lerp(startFore.y, neutralFore.y, frame / steps);
-        rFore.rotation.z = THREE.MathUtils.lerp(startFore.z, neutralFore.z, frame / steps);
-
-        rHand.rotation.x = THREE.MathUtils.lerp(startHand.x, neutralHand.x, frame / steps);
-        rHand.rotation.y = THREE.MathUtils.lerp(startHand.y, neutralHand.y, frame / steps);
-        rHand.rotation.z = THREE.MathUtils.lerp(startHand.z, neutralHand.z, frame / steps);
-
-        frame++;
-        requestAnimationFrame(animate);
-      }
-    };
-
-    animate();
   }
 
   // ▶️ Запускаємо фазу 1
