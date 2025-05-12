@@ -59,7 +59,7 @@ export async function playVoiceWithMimic(audioUrl, faceMesh, avatar, onStartSpea
         
         // ✋ Підняття ПРАВОЇ руки — після говоріння
         import('/src/gestures/gestureRightHandOnWaist.js')
-          .then(m => m.gestureRightHandOnWaist(avatar));
+          .then(m => m.gestureRightHandOnWaist(avatar)); 
 
         resolve(); // 🔁 Завершення — важливо для циклу
       }
@@ -80,20 +80,20 @@ export async function playVoiceWithMimic(audioUrl, faceMesh, avatar, onStartSpea
         onStartSpeaking();
 
         // Жест крутіння рукою)
-        setTimeout(() => {
-          requestAnimationFrame(() => {
-            resetRightHandPose(avatar);
-            import("/src/gestures/gestureExplainWithHand.js").then((m) => m.gestureExplainWithHand(avatar));
-          });
-        }, 2500);
+        // setTimeout(() => {
+        //   requestAnimationFrame(() => {
+        //     resetRightHandPose(avatar);
+        //     import("/src/gestures/gestureExplainWithHand.js").then((m) => m.gestureExplainWithHand(avatar));
+        //   });
+        // }, 2500);
 
         // Жест Увага!!! великий палець)
-        setTimeout(() => {
-          requestAnimationFrame(() => {
-            resetRightHandPose(avatar);
-            import("/src/gestures/gestureAttentionWithFinger.js").then((m) => m.gestureAttentionWithFinger(avatar));
-          });
-        }, 5500);
+        // setTimeout(() => {
+        //   requestAnimationFrame(() => {
+        //     resetRightHandPose(avatar);
+        //     import("/src/gestures/gestureAttentionWithFinger.js").then((m) => m.gestureAttentionWithFinger(avatar));
+        //   });
+        // }, 5500);
 
         // ✋ Підняти ліву руку під час говоріння
       setTimeout(() => {

@@ -4,7 +4,6 @@ header("Access-Control-Allow-Headers: *");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Content-Type: application/json");
 
-// Підключаємо .env-файл
 $envPath = dirname(__DIR__) . '/.env';
 if (file_exists($envPath)) {
     $envVars = parse_ini_file($envPath);
@@ -16,12 +15,11 @@ if (file_exists($envPath)) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['audio'])) {
     $audioFile = $_FILES['audio'];
 
-    // Готуємо файл до CURL
     $cfile = curl_file_create($audioFile['tmp_name'], $audioFile['type'], $audioFile['name']);
 
     $postData = [
         'file' => $cfile,
-        'model' => 'whisper-1', // або інший, якщо треба
+        'model' => 'whisper-1', 
         'response_format' => 'json'
     ];
 
