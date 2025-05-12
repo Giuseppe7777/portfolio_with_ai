@@ -90,6 +90,14 @@ export async function playVoiceWithMimic(audioUrl, faceMesh, avatar, onStartSpea
           });
         }, 5500);
 
+        // ✋ Підняти ліву руку під час говоріння
+      setTimeout(() => {
+        requestAnimationFrame(() => {
+          import("/src/gestures/gestureLeftHandOnWaist.js")
+            .then((m) => m.gestureLeftHandOnWaist(avatar));
+        });
+      }, 500);
+
         // Жест - Опускання лівої руки)
         setTimeout(() => {
           requestAnimationFrame(() => {
