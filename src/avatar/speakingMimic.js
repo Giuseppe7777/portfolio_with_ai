@@ -122,3 +122,26 @@ export function startSpeakingBodyMovements(faceMesh, avatar) {
 function clamp(v, min, max) {
   return Math.max(min, Math.min(max, v));
 }
+
+window.poseControl = {
+    set(boneName, x, y, z) {
+      const bone = avatar.getObjectByName(boneName);
+      if (!bone) return console.warn(`❌ Кістка ${boneName} не знайдена`);
+      bone.rotation.set(x, y, z);
+      console.log(`✅ ${boneName} встановлено → X=${x.toFixed(3)}, Y=${y.toFixed(3)}, Z=${z.toFixed(3)}`);
+    },
+    get(boneName) {
+      const bone = avatar.getObjectByName(boneName);
+      if (!bone) return console.warn(`❌ Кістка ${boneName} не знайдена`);
+      const r = bone.rotation;
+      console.log(`📍 ${boneName} → X=${r.x.toFixed(3)}, Y=${r.y.toFixed(3)}, Z=${r.z.toFixed(3)}`);
+    },
+    list() {
+      const bones = {};
+      avatar.traverse(obj => {
+        if (obj.isBone) bones[obj.name] = obj;
+      });
+      console.log("🦴 Доступні кістки:");
+      console.table(Object.keys(bones));
+    }
+  };

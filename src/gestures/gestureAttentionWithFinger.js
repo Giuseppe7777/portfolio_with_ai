@@ -166,7 +166,7 @@ window.poseControl = {
 
   /*
 
-  poseControl.set('mixamorigRightArm',       0.500, 0.800, -0.400); 
+poseControl.set('mixamorigRightArm',       0.500, 0.800, -0.400); 
 poseControl.set('mixamorigRightForeArm',   1.200, 1.100,  0.000); 
 poseControl.set('mixamorigRightHand',      0.400, 0.000,  0.300); 
 

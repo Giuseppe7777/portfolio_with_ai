@@ -88,7 +88,15 @@ export async function playVoiceWithMimic(audioUrl, faceMesh, avatar, onStartSpea
           import('/src/gestures/gestureAttentionWithFinger.js')
             .then(m => m.gestureAttentionWithFinger(avatar));
         });
-      }, 6500);
+      }, 5500);
+
+      // Жест - Опускання лівої руки)
+      setTimeout(() => {
+        requestAnimationFrame(() => {
+          import('/src/gestures/lowerArms.js')
+            .then(m => m.lowerLeftArm(avatar));
+        });
+      }, 9500);
 
 
       animate();
