@@ -15,11 +15,8 @@ export function movementsAndMimicWhileTalking(faceMesh, avatar) {
 
   setInterval(() => {
     if (!infl) return;
-    infl[smileL] = 0.7 + Math.random() * 0.2;
-    infl[smileR] = 0.7 + Math.random() * 0.2;
-    infl[browUp] = 0.2 + Math.random() * 0.2;
-    infl[squintL] = 0.1 + Math.random() * 0.6;
-    infl[squintR] = 0.1 + Math.random() * 0.6;
+    infl[smileL] = 0.57 + Math.random() * 0.18;
+    infl[smileR] = 0.57 + Math.random() * 0.18;
   }, 2000);
 
   const head = avatar.getObjectByName('mixamorigHead');

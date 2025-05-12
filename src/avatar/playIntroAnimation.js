@@ -13,30 +13,42 @@ export function playIntroAnimation(mixer, avatar, faceMesh) {
   action.paused = false;
   action.fadeIn(0.001);
 
-  // 🔹 Міміка — усмішка та м’який погляд
+    // 🔹 Міміка — усмішка (плавно) + решта фіксовано
   if (faceMesh && faceMesh.morphTargetDictionary) {
     const dict = faceMesh.morphTargetDictionary;
     const infl = faceMesh.morphTargetInfluences;
 
-    const smileR = dict['A39_Mouth_Smile_Right'];
+    const set = (name, val) => {
+      const index = dict[name];
+      if (index !== undefined) infl[index] = val;
+      else console.warn(`❌ Shape key ${name} не знайдено`);
+    };
+
+    // 🧊 Намертво зафіксовані значення
+    set('A42_Mouth_Dimple_Left',    0.55);
+    set('A43_Mouth_Dimple_Right',   0.55);
+    set('A16_Eye_Squint_Left',      1.00);
+    set('A17_Eye_Squint_Right',     1.00);
+    set('A08_Eye_Look_Down_Left',   1.00);
+    set('A09_Eye_Look_Down_Right',  1.00);
+    set('A04_Brow_Outer_Up_Left',   0.17);
+    set('A05_Brow_Outer_Up_Right',  0.17);
+    set('A02_Brow_Down_Left',       0.31);
+    set('A03_Brow_Down_Right',      0.31);
+
+    // 😊 Усмішка з fade-in: з 0.57 до 1.0
     const smileL = dict['A38_Mouth_Smile_Left'];
-    const eyeWideR = dict['A19_Eye_Wide_Right'];
-    const eyeWideL = dict['A18_Eye_Wide_Left'];
-    const squintR = dict['A17_Eye_Squint_Right'];
-    const squintL = dict['A16_Eye_Squint_Left'];
+    const smileR = dict['A39_Mouth_Smile_Right'];
+    let smileValue = 0.45;
 
-    infl[eyeWideR] = 0;
-    infl[eyeWideL] = 0;
-    infl[squintR] = 0.15;
-    infl[squintL] = 0.15;
-
-    let smileValue = 0;
-    const smileInterval = setInterval(() => {
-      smileValue += 0.05;
-      infl[smileR] = smileValue;
-      infl[smileL] = smileValue;
-      if (smileValue >= 1) clearInterval(smileInterval);
-    }, 50);
+    if (smileL !== undefined && smileR !== undefined) {
+      const smileInterval = setInterval(() => {
+        smileValue += 0.02;
+        infl[smileL] = smileValue;
+        infl[smileR] = smileValue;
+        if (smileValue >= 0.70) clearInterval(smileInterval);
+      }, 50);
+    }
   }
 
   // 🔹 Цільова позиція, щоб підплив до кадру (якщо треба)
