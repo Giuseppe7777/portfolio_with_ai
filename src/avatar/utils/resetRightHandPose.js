@@ -9,7 +9,7 @@ export function resetRightHandPose(avatar) {
 }
 
 export function resetRightHandPoseSmooth(avatar, durationMs = 500) {
-  const steps = Math.round(durationMs / (1000 / 60)); // кадрів при ~60fps
+  const steps = Math.round(durationMs / (1000 / 60)); 
   let frame = 0;
 
   const bones = {};
@@ -43,7 +43,6 @@ export function resetRightHandPoseSmooth(avatar, durationMs = 500) {
   animate();
 }
 
-// 🧩 Централізовані кути нейтральної пози
 const neutralAngles = {
   mixamorigRightArm:       [0.969, 0.460, -0.219],
   mixamorigRightForeArm:   [0.418, 0.248, 0.082],
