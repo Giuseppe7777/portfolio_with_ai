@@ -1,9 +1,9 @@
 // 🔁 Додаємо підтримку циклу: слухає → говорить → слухає
 
-import * as THREE from 'three';
-import { setTalking } from '../avatar/state';
-import { startSpeakingBodyMovements } from '../avatar/speakingMimic.js';
-import { resetRightHandPose } from '../avatar/utils/resetRightHandPose.js';
+import * as THREE from "three";
+import { setTalking } from "../avatar/state";
+import { movementsAndMimicWhileTalking } from "../avatar/movAndMimWhileTalking.js";
+import { resetRightHandPose } from "../avatar/utils/resetRightHandPose.js";
 
 /**
  * Програє озвучку тексту та анімує рот через гучність аудіо
@@ -15,15 +15,15 @@ import { resetRightHandPose } from '../avatar/utils/resetRightHandPose.js';
 export async function playVoiceWithMimic(audioUrl, faceMesh, avatar, onStartSpeaking = () => {}) {
   return new Promise(async (resolve) => {
     const audio = new Audio(audioUrl);
-    audio.preload = 'auto';
+    audio.preload = "auto";
     audio.volume = 1.0;
 
-    const mouthOpenKey = 'A25_Jaw_Open';
+    const mouthOpenKey = "A25_Jaw_Open";
     const dict = faceMesh.morphTargetDictionary;
     const infl = faceMesh.morphTargetInfluences;
     const mouthIndex = dict[mouthOpenKey];
 
-    const jaw = avatar.getObjectByName('mixamorigJawRoot');
+    const jaw = avatar.getObjectByName("mixamorigJawRoot");
 
     if (mouthIndex === undefined || !jaw) {
       audio.play();
@@ -60,50 +60,49 @@ export async function playVoiceWithMimic(audioUrl, faceMesh, avatar, onStartSpea
       }
     };
 
-    await new Promise(resolve => {
-      audio.addEventListener('loadedmetadata', resolve);
+    await new Promise((resolve) => {
+      audio.addEventListener("loadedmetadata", resolve);
     });
 
     // 🔹 Додаємо живі рухи тіла до голосу
-    startSpeakingBodyMovements(faceMesh, avatar);
+    movementsAndMimicWhileTalking(faceMesh, avatar);
 
-    audio.play().then(() => {
-      context.resume();
-      setTalking(true);
-      onStartSpeaking();
+    audio
+      .play()
+      .then(() => {
+        context.resume();
+        setTalking(true);
+        onStartSpeaking();
 
-    // Жест крутіння рукою)
-      setTimeout(() => {
-        requestAnimationFrame(() => {
-          resetRightHandPose(avatar); 
-          import('/src/gestures/gestureExplainWithHand.js')
-            .then(m => m.gestureExplainWithHand(avatar));
-        });
-      }, 2500);
+        // Жест крутіння рукою)
+        setTimeout(() => {
+          requestAnimationFrame(() => {
+            resetRightHandPose(avatar);
+            import("/src/gestures/gestureExplainWithHand.js").then((m) => m.gestureExplainWithHand(avatar));
+          });
+        }, 2500);
 
-      // Жест Увага!!! великий палець)
-      setTimeout(() => {
-        requestAnimationFrame(() => {
-          resetRightHandPose(avatar); 
-          import('/src/gestures/gestureAttentionWithFinger.js')
-            .then(m => m.gestureAttentionWithFinger(avatar));
-        });
-      }, 5500);
+        // Жест Увага!!! великий палець)
+        setTimeout(() => {
+          requestAnimationFrame(() => {
+            resetRightHandPose(avatar);
+            import("/src/gestures/gestureAttentionWithFinger.js").then((m) => m.gestureAttentionWithFinger(avatar));
+          });
+        }, 5500);
 
-      // Жест - Опускання лівої руки)
-      setTimeout(() => {
-        requestAnimationFrame(() => {
-          import('/src/gestures/lowerArms.js')
-            .then(m => m.lowerLeftArm(avatar));
-        });
-      }, 9500);
+        // Жест - Опускання лівої руки)
+        setTimeout(() => {
+          requestAnimationFrame(() => {
+            import("/src/gestures/lowerArms.js").then((m) => m.lowerLeftArm(avatar));
+          });
+        }, 9500);
 
-
-      animate();
-    }).catch(err => {
-      console.error('🎵 Не вдалося програти аудіо:', err);
-      setTalking(false);
-      resolve();
-    });
+        animate();
+      })
+      .catch((err) => {~~
+        console.error("🎵 Не вдалося програти аудіо:", err);
+        setTalking(false);
+        resolve();
+      });
   });
 }

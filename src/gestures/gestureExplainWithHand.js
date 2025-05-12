@@ -1,24 +1,24 @@
 // src/gestures/gestureExplainWithHand.js
-import * as THREE from 'three';
-import { resetRightHandPoseSmooth } from '../avatar/utils/resetRightHandPose.js';
+import * as THREE from "three";
+import { resetRightHandPoseSmooth } from "../avatar/utils/resetRightHandPose.js";
 
 export function gestureExplainWithHand(avatar) {
-  const rArm = avatar.getObjectByName('mixamorigRightArm');
-  const rFore = avatar.getObjectByName('mixamorigRightForeArm');
-  const rHand = avatar.getObjectByName('mixamorigRightHand');
+  const rArm = avatar.getObjectByName("mixamorigRightArm");
+  const rFore = avatar.getObjectByName("mixamorigRightForeArm");
+  const rHand = avatar.getObjectByName("mixamorigRightHand");
 
   if (!rArm || !rFore || !rHand) return;
 
-  rArm.rotation.order = 'XYZ';
-  rFore.rotation.order = 'XYZ';
-  rHand.rotation.order = 'XYZ';
+  rArm.rotation.order = "XYZ";
+  rFore.rotation.order = "XYZ";
+  rHand.rotation.order = "XYZ";
 
-  const targetArm  = new THREE.Euler(0.969, 0.3236, -0.619);
+  const targetArm = new THREE.Euler(0.969, 0.3236, -0.619);
   const targetFore = new THREE.Euler(1.218, 1.148, 0.082);
   const targetHand = new THREE.Euler(0.813, -0.914, 0.901);
 
   const startPose = {
-    arm: new THREE.Euler(0.969, 0.460, -0.219),
+    arm: new THREE.Euler(0.969, 0.46, -0.219),
     fore: new THREE.Euler(0.418, 0.248, 0.082),
     hand: new THREE.Euler(0.813, -0.914, 0.901),
   };
@@ -122,8 +122,6 @@ export function gestureExplainWithHand(avatar) {
   approachStartPose();
 }
 
-
-
 window.poseControl = {
   set(boneName, x, y, z) {
     const bone = avatar.getObjectByName(boneName);
@@ -139,14 +137,13 @@ window.poseControl = {
   },
   list() {
     const bones = {};
-    avatar.traverse(obj => {
+    avatar.traverse((obj) => {
       if (obj.isBone) bones[obj.name] = obj;
     });
     console.log("🦴 Доступні кістки:");
     console.table(Object.keys(bones));
-  }
+  },
 };
-
 
 // import('/src/gestures/gestureExplainWithHand.js').then(m => m.gestureExplainWithHand(avatar));
 
@@ -170,9 +167,9 @@ poseControl.get('mixamorigRightArm');
 poseControl.get('mixamorigRightForeArm');
 poseControl.get('mixamorigRightHand');
 
-idleMimic.js:177 📍 mixamorigRightArm → X=0.969, Y=0.460, Z=-0.219
-idleMimic.js:177 📍 mixamorigRightForeArm → X=0.418, Y=0.248, Z=0.082
-idleMimic.js:177 📍 mixamorigRightHand → X=0.813, Y=-0.914, Z=0.901
+movAndMimWhileNotTalking.js:177 📍 mixamorigRightArm → X=0.969, Y=0.460, Z=-0.219
+movAndMimWhileNotTalking.js:177 📍 mixamorigRightForeArm → X=0.418, Y=0.248, Z=0.082
+movAndMimWhileNotTalking.js:177 📍 mixamorigRightHand → X=0.813, Y=-0.914, Z=0.901
 
 correct - poseControl.set('mixamorigRightArm', 0.969, 0.3236, -0.619);
 poseControl.set('mixamorigRightForeArm', 1.218, 1.148, 0.082); 
