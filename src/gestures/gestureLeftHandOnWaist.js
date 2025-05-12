@@ -2,58 +2,61 @@
 import * as THREE from 'three';
 
 /**
- * Піднімає ліву руку на талію з пальцями (жест "ліва рука на поясі")
- * @param {THREE.Object3D} avatar - повна 3D-модель
- * @param {number} durationMs - тривалість анімації у мс (за замовчуванням 600)
+ * Піднімає ліву руку на талію з анімацією всіх кісток та пальців
+ * @param {THREE.Object3D} avatar
+ * @param {number} durationMs - час анімації (за замовчуванням 600мс)
  */
 export function gestureLeftHandOnWaist(avatar, durationMs = 600) {
   const lArm = avatar.getObjectByName('mixamorigLeftArm');
   const lFore = avatar.getObjectByName('mixamorigLeftForeArm');
   const lHand = avatar.getObjectByName('mixamorigLeftHand');
 
-  const t1 = avatar.getObjectByName('mixamorigLeftHandThumb1');
-  const t2 = avatar.getObjectByName('mixamorigLeftHandThumb2');
-  const t3 = avatar.getObjectByName('mixamorigLeftHandThumb3');
-
-  const i1 = avatar.getObjectByName('mixamorigLeftHandIndex1');
-  const m1 = avatar.getObjectByName('mixamorigLeftHandMiddle1');
-  const r1 = avatar.getObjectByName('mixamorigLeftHandRing1');
-  const p1 = avatar.getObjectByName('mixamorigLeftHandPinky1');
+  const fingers = {
+    t1: avatar.getObjectByName('mixamorigLeftHandThumb1'),
+    t2: avatar.getObjectByName('mixamorigLeftHandThumb2'),
+    i1: avatar.getObjectByName('mixamorigLeftHandIndex1'),
+    m1: avatar.getObjectByName('mixamorigLeftHandMiddle1'),
+    r1: avatar.getObjectByName('mixamorigLeftHandRing1'),
+    p1: avatar.getObjectByName('mixamorigLeftHandPinky1'),
+  };
 
   if (!lArm || !lFore || !lHand) return;
 
+  lArm.rotation.order = 'XYZ';
+  lFore.rotation.order = 'XYZ';
+  lHand.rotation.order = 'XYZ';
+  for (let k in fingers) fingers[k] && (fingers[k].rotation.order = 'XYZ');
+
+  const fromQuat = {};
+  const toQuat = {};
+
+  fromQuat.arm = lArm.quaternion.clone();
+  toQuat.arm = new THREE.Quaternion().setFromEuler(new THREE.Euler(3.571, 3.042, 3.089));
+
+  fromQuat.fore = lFore.quaternion.clone();
+  toQuat.fore = new THREE.Quaternion().setFromEuler(new THREE.Euler(0.116, 1.364, 1.170));
+
+  fromQuat.hand = lHand.quaternion.clone();
+  toQuat.hand = new THREE.Quaternion().setFromEuler(new THREE.Euler(-1.325, 0.544, 1.227));
+
+  const fingerTargets = {
+    t1: [-0.927, -0.140, 0.070],
+    t2: [0.000, 0.052, 0.925],
+    i1: [-0.733, 0.000, -0.646],
+    m1: [-0.611, 0.000, -0.489],
+    r1: [-0.471, 0.157, -0.384],
+    p1: [-0.454, -0.087, -0.070]
+  };
+
+  for (let f in fingerTargets) {
+    if (fingers[f]) {
+      fromQuat[f] = fingers[f].quaternion.clone();
+      toQuat[f] = new THREE.Quaternion().setFromEuler(new THREE.Euler(...fingerTargets[f]));
+    }
+  }
+
   const steps = Math.round(durationMs / (1000 / 60));
   let frame = 0;
-
-  const fromQuat = {
-    arm: lArm.quaternion.clone(),
-    fore: lFore.quaternion.clone(),
-    hand: lHand.quaternion.clone(),
-
-    t1: t1?.quaternion.clone(),
-    t2: t2?.quaternion.clone(),
-    t3: t3?.quaternion.clone(),
-
-    i1: i1?.quaternion.clone(),
-    m1: m1?.quaternion.clone(),
-    r1: r1?.quaternion.clone(),
-    p1: p1?.quaternion.clone(),
-  };
-
-  const toQuat = {
-    arm: new THREE.Quaternion().setFromEuler(new THREE.Euler(3.571, 3.042, 3.089)),
-    fore: new THREE.Quaternion().setFromEuler(new THREE.Euler(0.116, 1.364, 1.170)),
-    hand: new THREE.Quaternion().setFromEuler(new THREE.Euler(-1.325, -0.544, -1.227)),
-
-    t1: new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.927, 0.140, -0.070)),
-    t2: new THREE.Quaternion().setFromEuler(new THREE.Euler(0.000, -0.052, -0.925)),
-    t3: new THREE.Quaternion().setFromEuler(new THREE.Euler(0.000, 0.000, 0.000)),
-
-    i1: new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.733, 0.000, 0.646)),
-    m1: new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.611, 0.000, 0.489)),
-    r1: new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.471, -0.157, 0.384)),
-    p1: new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.454, 0.087, 0.070)),
-  };
 
   function animate() {
     if (frame <= steps) {
@@ -63,14 +66,11 @@ export function gestureLeftHandOnWaist(avatar, durationMs = 600) {
       lFore.quaternion.copy(fromQuat.fore).slerp(toQuat.fore, alpha);
       lHand.quaternion.copy(fromQuat.hand).slerp(toQuat.hand, alpha);
 
-      t1 && t1.quaternion.copy(fromQuat.t1).slerp(toQuat.t1, alpha);
-      t2 && t2.quaternion.copy(fromQuat.t2).slerp(toQuat.t2, alpha);
-      t3 && t3.quaternion.copy(fromQuat.t3).slerp(toQuat.t3, alpha);
-
-      i1 && i1.quaternion.copy(fromQuat.i1).slerp(toQuat.i1, alpha);
-      m1 && m1.quaternion.copy(fromQuat.m1).slerp(toQuat.m1, alpha);
-      r1 && r1.quaternion.copy(fromQuat.r1).slerp(toQuat.r1, alpha);
-      p1 && p1.quaternion.copy(fromQuat.p1).slerp(toQuat.p1, alpha);
+      for (let f in fingers) {
+        if (fingers[f]) {
+          fingers[f].quaternion.copy(fromQuat[f]).slerp(toQuat[f], alpha);
+        }
+      }
 
       frame++;
       requestAnimationFrame(animate);

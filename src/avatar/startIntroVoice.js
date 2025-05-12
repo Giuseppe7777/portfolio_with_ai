@@ -14,9 +14,9 @@ export async function startIntroVoice(faceMesh, avatar) {
   const audioUrl = "/audio/intro-voice-1.mp3";
 
   // 🎙️ Відтворення голосу з мімікою + запуск idle-анімації після
-  const duration = await playVoiceWithMimic(audioUrl, faceMesh, avatar, () =>
-    movementsAndMimicWhileNotTalking(faceMesh, avatar)
-  );
+  const duration = await playVoiceWithMimic(audioUrl, faceMesh, avatar, () => {
+    movementsAndMimicWhileNotTalking(faceMesh, avatar);
+  });
 
   // ⏱️ Показуємо кнопку за 5 сек до кінця
   setTimeout(() => {
