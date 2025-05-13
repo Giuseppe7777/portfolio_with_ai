@@ -1,4 +1,5 @@
 import { playVoiceWithMimic } from "../voice/playVoiceWithMimic";
+import { setMicStream } from './state.js';
 
 /**
  * Показує кнопку для дозволу на мікрофон і починає слухати, якщо користувач погодився
@@ -38,9 +39,13 @@ export function promptMicrophoneAccess() {
   micBtn.addEventListener('click', async () => {
     try {
       micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
+      setMicStream(micStream);
       console.log('🎤 Доступ до мікрофона надано');
       micBtn.remove();
+      if (!micStream || micStream.getTracks().some(t => t.readyState === 'ended')) {
+        console.warn('🎤 Мікрофон вимкнено. Слухання скасовано.');
+        return;
+      }
 
       listenToSpeech(micStream);
     } catch (err) {
@@ -120,6 +125,10 @@ function listenToSpeech(stream) {
 
   mediaRecorder.onstop = () => {
     const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+    if (audioBlob.size === 0) {
+      console.warn('⚠️ Порожній аудіо-файл. Пропускаємо розпізнавання.');
+      return;
+    }
     const timestamp = new Date().toISOString();
 
     console.log('✅ Запис завершено. Blob:', audioBlob);
@@ -156,6 +165,11 @@ function listenToSpeech(stream) {
 
 function handleFirstUserText(text) {
   console.log('🤖 Готуємо запит до GPT з текстом користувача:', text);
+  if (!text || text.trim() === '' || text === 'undefined') {
+    console.warn('⚠️ Текст пустий або невизначений. Не звертаємося до GPT.');
+    return;
+  }
+
 
   fetch('http://localhost/my-portfolio-fullstack-ai/my-portfolio-fullstack-ai/php/questionAnswer.php', {
     method: 'POST',
@@ -187,6 +201,13 @@ function handleFirstUserText(text) {
           if (faceMesh && avatar) {
             playVoiceWithMimic(audioURL, faceMesh, avatar).then(() => {
               console.log('🔁 Відповідь завершено. Повертаємось до прослуховування...');
+
+              // ⛔ 🔒 Перевірка, чи мікрофон ще живий
+              if (!micStream || micStream.getTracks().some(t => t.readyState === 'ended')) {
+                console.warn('🎤 Мікрофон вимкнено. Слухання скасовано.');
+                return;
+              }
+
               listenToSpeech(micStream);
             });
           } else {

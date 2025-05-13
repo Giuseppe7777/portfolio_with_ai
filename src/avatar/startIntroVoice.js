@@ -1,6 +1,7 @@
 import { playVoiceWithMimic } from "../voice/playVoiceWithMimic.js";
 import { movementsAndMimicWhileNotTalking } from "./movAndMimWhileNotTalking.js";
 import { promptMicrophoneAccess, setAvatarContext } from "./listenUserSpeech.js";
+import { getConversationActive } from './state.js';
 
 /**
  * Програє перше вітання після анімації WalkAndWave
@@ -20,6 +21,10 @@ export async function startIntroVoice(faceMesh, avatar) {
 
   // ⏱️ Показуємо кнопку за 5 сек до кінця
   setTimeout(() => {
-    promptMicrophoneAccess();
+    if (getConversationActive()) {
+      promptMicrophoneAccess();
+    } else {
+      console.log('🛑 Розмова була зупинена до появи кнопки мікрофона.');
+    }
   }, (duration - 5) * 1000);
 }

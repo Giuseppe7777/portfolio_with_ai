@@ -3,7 +3,7 @@
 import * as THREE from "three";
 import { setTalking } from "../avatar/state";
 import { movementsAndMimicWhileTalking } from "../avatar/movAndMimWhileTalking.js";
-import { resetRightHandPose } from "../avatar/utils/resetRightHandPose.js";
+import { setCurrentAudio, setAudioContext  } from '../avatar/state.js';
 
 /**
  * Програє озвучку тексту та анімує рот через гучність аудіо
@@ -17,6 +17,8 @@ export async function playVoiceWithMimic(audioUrl, faceMesh, avatar, onStartSpea
     const audio = new Audio(audioUrl);
     audio.preload = "auto";
     audio.volume = 1.0;
+
+    setCurrentAudio(audio); 
 
     const mouthOpenKey = "A25_Jaw_Open";
     const dict = faceMesh.morphTargetDictionary;
@@ -32,6 +34,8 @@ export async function playVoiceWithMimic(audioUrl, faceMesh, avatar, onStartSpea
     }
 
     const context = new AudioContext();
+    setAudioContext(context);
+
     const src = context.createMediaElementSource(audio);
     const analyser = context.createAnalyser();
     analyser.fftSize = 512;
