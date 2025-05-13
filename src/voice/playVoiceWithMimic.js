@@ -50,7 +50,7 @@ export async function playVoiceWithMimic(audioUrl, faceMesh, avatar, onStartSpea
       infl[mouthIndex] = volume * 3.7;
       jaw.rotation.x = baseJaw + volume * jawAmplitude;
 
-      if (!audio.paused && !audio.ended) {
+      if (!audio.paused && !audio.ended) {  // коли припиняється інтроспіч то йде підняття правої руки
         requestAnimationFrame(animate);
       } else {
         infl[mouthIndex] = 0;
@@ -102,6 +102,13 @@ export async function playVoiceWithMimic(audioUrl, faceMesh, avatar, onStartSpea
             .then((m) => m.gestureLeftHandOnWaist(avatar));
         });
       }, 500);
+
+              // Жест - Опускання правої руки)
+        setTimeout(() => {
+          requestAnimationFrame(() => {
+            import("/src/gestures/lowerArms.js").then((m) => m.lowerRightArm(avatar));
+          });
+        }, 3000);
 
         // Жест - Опускання лівої руки)
         setTimeout(() => {
