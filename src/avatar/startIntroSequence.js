@@ -40,7 +40,18 @@ export async function startIntroSequence(container) {
     return;
   }
 
-  const { avatar, mixer, faceMesh } = await loadAvatarModel(scene);
+  let avatar, mixer, faceMesh;
+
+  if (window.preloadedAvatarData) {
+    // Використовуємо вже завантажену модель
+    ({ avatar, mixer, faceMesh } = window.preloadedAvatarData);
+    scene.add(avatar); // обов’язково вставити у поточну сцену
+    console.log('⚡ Використано preloaded модель');
+  } else {
+    // Якщо не встигло завантажитись — fallback
+    ({ avatar, mixer, faceMesh } = await loadAvatarModel(scene));
+    console.log('🐢 Модель не була preloaded, завантажили вручну');
+  }
 
   // 🛑 Перевірка після завантаження GLB
   if (!getConversationActive()) {

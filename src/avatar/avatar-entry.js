@@ -1,5 +1,6 @@
 // src/avatar/avatar-entry.js
 import { startIntroSequence } from './startIntroSequence.js';
+import { preloadAvatarModel } from './preloadAvatarModel.js';
 import {
   setConversationActive,
   getConversationActive,
@@ -21,6 +22,11 @@ import {
 const button = document.getElementById('talk-button');
 const container = document.getElementById('avatar-container');
 const photo = document.getElementById('avatar-photo');
+
+preloadAvatarModel().then((data) => {
+  window.preloadedAvatarData = data;
+  console.log('🚀 Avatar preloaded');
+});
 
 // 🔁 Локальний захист запуску
 let isLaunching = false;
