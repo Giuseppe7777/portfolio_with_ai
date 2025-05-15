@@ -1,5 +1,5 @@
 import { playVoiceWithMimic } from "../voice/playVoiceWithMimic";
-import { setMicStream } from './state.js';
+import { setMicStream, getConversationActive } from './state.js';
 
 /**
  * Показує кнопку для дозволу на мікрофон і починає слухати, якщо користувач погодився
@@ -164,7 +164,13 @@ function listenToSpeech(stream) {
 }
 
 function handleFirstUserText(text) {
+  if (!getConversationActive()) {
+    console.warn('🛑 Розмова була зупинена до GPT-запиту — не звертаємося до GPT.');
+    return;
+  }
+
   console.log('🤖 Готуємо запит до GPT з текстом користувача:', text);
+
   if (!text || text.trim() === '' || text === 'undefined') {
     console.warn('⚠️ Текст пустий або невизначений. Не звертаємося до GPT.');
     return;
@@ -197,6 +203,11 @@ function handleFirstUserText(text) {
         .then(audioBlob => {
           const audioURL = URL.createObjectURL(audioBlob);
           const audio = new Audio(audioURL);
+
+          if (!getConversationActive()) {
+            console.warn('🛑 Розмова зупинена — не запускаємо відтворення голосу.');
+            return;
+          }
 
           if (faceMesh && avatar) {
             playVoiceWithMimic(audioURL, faceMesh, avatar).then(() => {
