@@ -9,6 +9,7 @@ let faceMesh = null;
 let avatar = null;
 let micStream = null;
 let silenceCount = 0;
+let skipSTT = false;
 
 export function setAvatarContext(mesh, model) {
   faceMesh = mesh;
@@ -58,6 +59,7 @@ export function promptMicrophoneAccess() {
 
 let isFinalSilence = false;
 let lastUserText = '';
+let lastRealUserText = '';
 
 function listenToSpeech(stream) {
   console.log('🎙️ Починаємо запис голосу...');
@@ -120,6 +122,7 @@ function listenToSpeech(stream) {
 
     if (!speaking) {
       silenceCount++;
+      skipSTT = true; 
       console.log(`🤐 Виявлено тишу. Мовчанок поспіль: ${silenceCount}`);
 
       if (silenceCount === 1) {
@@ -131,10 +134,12 @@ function listenToSpeech(stream) {
       }
       return; 
     }
+
     console.log('🗣️ Користувач щось сказав — обнуляємо лічильник мовчанок');
     silenceCount = 0;
-    mediaRecorder.stop();
+    mediaRecorder.stop(); 
   };
+
 
   mediaRecorder.ondataavailable = (event) => {
     audioChunks.push(event.data);
@@ -142,6 +147,18 @@ function listenToSpeech(stream) {
   };
 
   mediaRecorder.onstop = () => {
+
+    if (!getConversationActive()) {
+      console.warn('🛑 Розмова вже завершена — пропускаємо onstop повністю');
+      return;
+    }
+
+    if (skipSTT) {
+      console.warn('🛑 Пропускаємо STT — це була мовчанка');
+      skipSTT = false; 
+      return;
+    }
+
     const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
     if (audioBlob.size === 0) {
       console.warn('⚠️ Порожній аудіо-файл. Пропускаємо розпізнавання.');
@@ -172,7 +189,9 @@ function listenToSpeech(stream) {
         }
 
         lastUserText = data.text;
+        lastRealUserText = lastUserText; 
         console.log('📌 Збережено текст користувача:', lastUserText);
+
         handleFirstUserText(lastUserText);
       })
       .catch(err => console.error('❌ Speech-to-Text помилка:', err));
@@ -186,15 +205,14 @@ function handleFirstUserText(text) {
   if (text === '__SILENCE__1') {
     console.log('📡 GPT: це перша мовчанка. Формуємо фразу з проханням повторити.');
     isFinalSilence = false;
-    text = 'Користувач мовчить. Скажи, що не почув його і попроси повторити.';
+    text = `${lastRealUserText} - визнач яка це мова і встанови її як мову відповіді тільки цього разу. Цю мову треба використати для того аби сказати що ти не почув ніякого питання і попросити про якесь питання. Тобто зараз тобі треба сказати, що ти нічого не почув і попроси щось сказати або запитати`;
   } else if (text === '__SILENCE__2') {
     console.log('📡 GPT: це друга мовчанка. Формуємо прощальну фразу.');
     isFinalSilence = true;
-    text = 'Користувач знову мовчить. Попрощайся і заверши розмову.';
+    text = `${lastRealUserText} - визнач яка це мова виключно для того, щоб цією мовою сказати, що ти дякуєш за розмову, бажаєш всього найкращого і до наступного разу. Тобто дякування за розмову, побажання всього найкращого і сподівання побачитися наступного разу має бути сказано визначеною мовою і тільки такою!!!`;
   } else {
     isFinalSilence = false;
   }
-
 
   if (!getConversationActive()) {
     console.warn('🛑 Розмова була зупинена до GPT-запиту — не звертаємося до GPT.');
@@ -251,6 +269,11 @@ function handleFirstUserText(text) {
                 return;
               }
               
+              if (!getConversationActive()) {
+                console.warn('🛑 Розмова вже зупинена — не повертаємось до прослуховування.');
+                return;
+              }
+
               if (!micStream || micStream.getTracks().some(t => t.readyState === 'ended')) {
                 console.warn('🎤 Мікрофон вимкнено. Слухання скасовано.');
                 return;
