@@ -724,7 +724,7 @@ a.icon-up-bg:hover {color: #5de4fc;}
 
 #avatar-photo.loading {
   opacity: 0;
-  transition: opacity 3s ease;
+  transition: opacity 7s ease;
 }
 
 #avatar-container {
