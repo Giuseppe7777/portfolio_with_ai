@@ -1,14 +1,15 @@
 import { playVoiceWithMimic } from "../voice/playVoiceWithMimic";
 import { setMicStream, getConversationActive } from './state.js';
 
+/**
+ * Показує кнопку для дозволу на мікрофон і починає слухати, якщо користувач погодився
+ */
+
 let faceMesh = null;
 let avatar = null;
 let micStream = null;
 let silenceCount = 0;
 let skipSTT = false;
-let isFinalSilence = false;
-let lastUserText = '';
-let lastRealUserText = '';
 
 export function setAvatarContext(mesh, model) {
   faceMesh = mesh;
@@ -47,6 +48,7 @@ export function promptMicrophoneAccess() {
         console.warn('🎤 Мікрофон вимкнено. Слухання скасовано.');
         return;
       }
+
       listenToSpeech(micStream);
     } catch (err) {
       console.error('❌ Не вдалося отримати доступ до мікрофона:', err);
@@ -54,6 +56,10 @@ export function promptMicrophoneAccess() {
     }
   });
 }
+
+let isFinalSilence = false;
+let lastUserText = '';
+let lastRealUserText = '';
 
 function listenToSpeech(stream) {
   console.log('🎙️ Починаємо запис голосу...');
@@ -88,14 +94,17 @@ function listenToSpeech(stream) {
       if (!speaking) {
         console.log('🔊 Користувач почав говорити');
         speaking = true;
+
+        skipSTT = false;
+
         if (initialSilenceTimer) {
           clearTimeout(initialSilenceTimer);
           initialSilenceTimer = null;
         }
       }
       lastSpokeTime = now;
-    } else if (speaking && lastSpokeTime && now - lastSpokeTime > 2500) {
-      console.log('🤐 Тиша понад 2.5 сек — зупиняємо запис');
+    } else if (speaking && lastSpokeTime && now - lastSpokeTime > 1000) {
+      console.log('🤐 Тиша понад 1 сек — зупиняємо запис');
       stopAll();
     }
   };
@@ -116,7 +125,7 @@ function listenToSpeech(stream) {
 
     if (!speaking) {
       silenceCount++;
-      skipSTT = true;
+      skipSTT = true; 
       console.log(`🤐 Виявлено тишу. Мовчанок поспіль: ${silenceCount}`);
 
       if (silenceCount === 1) {
@@ -126,13 +135,14 @@ function listenToSpeech(stream) {
         console.log('🔴 Друга мовчанка — надсилаємо __SILENCE__2 до GPT');
         handleFirstUserText('__SILENCE__2');
       }
-      return;
+      return; 
     }
 
     console.log('🗣️ Користувач щось сказав — обнуляємо лічильник мовчанок');
     silenceCount = 0;
-    mediaRecorder.stop();
+    mediaRecorder.stop(); 
   };
+
 
   mediaRecorder.ondataavailable = (event) => {
     audioChunks.push(event.data);
@@ -140,6 +150,7 @@ function listenToSpeech(stream) {
   };
 
   mediaRecorder.onstop = () => {
+
     if (!getConversationActive()) {
       console.warn('🛑 Розмова вже завершена — пропускаємо onstop повністю');
       return;
@@ -147,7 +158,7 @@ function listenToSpeech(stream) {
 
     if (skipSTT) {
       console.warn('🛑 Пропускаємо STT — це була мовчанка');
-      skipSTT = false;
+      skipSTT = false; 
       return;
     }
 
@@ -181,20 +192,10 @@ function listenToSpeech(stream) {
         }
 
         lastUserText = data.text;
-        lastRealUserText = lastUserText;
+        lastRealUserText = lastUserText; 
         console.log('📌 Збережено текст користувача:', lastUserText);
 
-        if (lastUserText === '__SILENCE__1') {
-          const prompt = `${lastRealUserText} - визнач яка це мова і встанови її як мову відповіді тільки цього разу. Цю мову треба використати для того аби сказати що ти не почув ніякого питання і попросити про якесь питання. Тобто зараз тобі треба сказати, що ти нічого не почув і попроси щось сказати або запитати`;
-          isFinalSilence = false;
-          askGPTAndSpeak(prompt);
-        } else if (lastUserText === '__SILENCE__2') {
-          const prompt = `${lastRealUserText} - визнач яка це мова виключно для того, щоб цією мовою сказати, що ти дякуєш за розмову, бажаєш всього найкращого і до наступного разу.`;
-          isFinalSilence = true;
-          askGPTAndSpeak(prompt);
-        } else {
-          handleFirstUserText(lastUserText);
-        }
+        handleFirstUserText(lastUserText);
       })
       .catch(err => console.error('❌ Speech-to-Text помилка:', err));
   };
@@ -204,51 +205,44 @@ function listenToSpeech(stream) {
 }
 
 function handleFirstUserText(text) {
+  if (text === '__SILENCE__1') {
+    isFinalSilence = false;
+
+    if (!lastRealUserText || lastRealUserText.trim() === '') {
+      console.log('📡 GPT: інтро-спіч → перша мовчанка. Відповідь англійською.');
+      text = 'Please say something. I didn’t hear any question.';
+    } else {
+      console.log('📡 GPT: це перша мовчанка після розмови. Формуємо прохання повторити.');
+      text = `${lastRealUserText} - визнач яка це мова і встанови її як мову відповіді тільки цього разу. Цю мову треба використати для того аби сказати що ти не почув ніякого питання і попросити про якесь питання. Тобто зараз тобі треба сказати, що ти нічого не почув і попроси щось сказати або запитати`;
+    }
+
+  } else if (text === '__SILENCE__2') {
+    isFinalSilence = true;
+
+    if (!lastRealUserText || lastRealUserText.trim() === '') {
+      console.log('📡 GPT: інтро-спіч → друга мовчанка. Відповідь англійською.');
+      text = 'Thanks for the talk. Hope to see you again next time!';
+    } else {
+      console.log('📡 GPT: це друга мовчанка після розмови. Формуємо прощальну фразу.');
+      text = `${lastRealUserText} - визнач яка це мова. Не говори що це за мова, а просто цією мовою скажи, що ти дякуєш за розмову, бажаєш всього найкращого і до наступного разу. Тобто дякування за розмову, побажання всього найкращого і сподівання побачитися наступного разу має бути сказано визначеною мовою і тільки такою!!!`;
+    }
+  } else {
+    isFinalSilence = false;
+  }
+
   if (!getConversationActive()) {
     console.warn('🛑 Розмова була зупинена до GPT-запиту — не звертаємося до GPT.');
     return;
   }
+
+  console.log('🤖 Готуємо запит до GPT з текстом користувача:', text);
 
   if (!text || text.trim() === '' || text === 'undefined') {
     console.warn('⚠️ Текст пустий або невизначений. Не звертаємося до GPT.');
     return;
   }
 
-  fetch('http://localhost/my-portfolio-fullstack-ai/my-portfolio-fullstack-ai/php/questionAnswer.php', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      question: `Текст: "${text}". Це прощальна фраза? Відповідай ТІЛЬКИ "yes" або "no".`
-    })
-  })
-    .then(res => res.json())
-    .then(data => {
-      if (data.status === 'error') {
-        console.error('❌ GPT error при перевірці прощання:', data.message);
-        return;
-      }
 
-      const isGoodbye = data.answer.trim().toLowerCase().includes('yes');
-      if (isGoodbye) {
-        console.log('👋 GPT підтвердив: це прощальна фраза');
-
-        isFinalSilence = true;
-
-        const goodbyePrompt = `"${text}" — визнач мову цієї фрази і ВІДПОВІДАЙ ЛИШЕ ТІЄЮ МОВОЮ. Скажи ввічливо, що дякуєш за розмову, бажаєш усього найкращого і сподіваєшся побачити людину знову. У відповіді НЕ МОЖНА використовувати жодної іншої мови.`;
-
-        askGPTAndSpeak(goodbyePrompt);
-      } else {
-        console.log('🙂 Це не прощальна фраза. Продовжуємо діалог.');
-        isFinalSilence = false;
-        askGPTAndSpeak(text);
-      }
-    })
-    .catch(err => {
-      console.error('❌ Помилка при перевірці на прощання:', err);
-    });
-}
-
-function askGPTAndSpeak(text) {
   fetch('http://localhost/my-portfolio-fullstack-ai/my-portfolio-fullstack-ai/php/questionAnswer.php', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -277,7 +271,7 @@ function askGPTAndSpeak(text) {
           const audio = new Audio(audioURL);
 
           if (!getConversationActive()) {
-            console.warn('🛑 Розмова зупинена — не запускаємо голос.');
+            console.warn('🛑 Розмова зупинена — не запускаємо відтворення голосу.');
             return;
           }
 
@@ -286,8 +280,13 @@ function askGPTAndSpeak(text) {
               console.log('🔁 Відповідь завершено. Повертаємось до прослуховування...');
 
               if (isFinalSilence) {
-                console.log('👋 Завершуємо сцену після прощання');
+                console.log('👋 Завершуємо сцену після другої мовчанки');
                 import('./avatar-entry.js').then(module => module.stopConversation());
+                return;
+              }
+              
+              if (!getConversationActive()) {
+                console.warn('🛑 Розмова вже зупинена — не повертаємось до прослуховування.');
                 return;
               }
 
@@ -305,7 +304,7 @@ function askGPTAndSpeak(text) {
           }
         })
         .catch(err => {
-          console.error('❌ Помилка при озвученні:', err);
+          console.error('❌ Помилка під час запиту до tts.php:', err);
           alert('Не вдалося озвучити відповідь. Спробуй ще раз.');
         });
     })
