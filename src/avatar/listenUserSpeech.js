@@ -204,7 +204,49 @@ function listenToSpeech(stream) {
   console.log('⏺️ Запис запущено');
 }
 
-function handleFirstUserText(text) {
+async function sendToGPT(text) {
+  const systemPrompt = `
+Your task is to respond to the user's message. 
+If the user is saying goodbye in any language, 
+you must politely say goodbye in the same language and nothing else. 
+If the message is truly a farewell, add "##END##" at the end of your response. 
+❗Do not add "##END##" if it was not a real farewell. Only use it when the user is clearly ending the conversation.
+`.trim();
+
+  try {
+    const response = await fetch('http://localhost/my-portfolio-fullstack-ai/my-portfolio-fullstack-ai/php/questionAnswer.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        question: `${text}\n\n---\n\n${systemPrompt}`
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.status === 'error') {
+      console.error('❌ GPT error:', data.message);
+      alert('GPT не відповів 😢');
+      return { answer: null, farewell: false };
+    }
+
+    const raw = (data.answer ?? '').trim();
+
+    const isFarewell = raw.includes('##END##');
+
+    const cleanAnswer = raw.replace('##END##', '').trim();
+
+    return { answer: cleanAnswer, farewell: isFarewell };
+
+  } catch (err) {
+    console.error('❌ GPT fetch помилка:', err);
+    alert('Не вдалося отримати відповідь від GPT');
+    return { answer: null, farewell: false };
+  }
+}
+
+
+async function handleFirstUserText(text) {
   if (text === '__SILENCE__1') {
     isFinalSilence = false;
 
@@ -213,7 +255,7 @@ function handleFirstUserText(text) {
       text = 'Please say something. I didn’t hear any question.';
     } else {
       console.log('📡 GPT: це перша мовчанка після розмови. Формуємо прохання повторити.');
-      text = `${lastRealUserText} - визнач яка це мова і встанови її як мову відповіді тільки цього разу. Цю мову треба використати для того аби сказати що ти не почув ніякого питання і попросити про якесь питання. Тобто зараз тобі треба сказати, що ти нічого не почув і попроси щось сказати або запитати`;
+      text = `${lastRealUserText}\n\nPlease detect the language of the user's message above. Do not say what language it is. Just use that language — and only that language — to say that you didn't hear any question and politely ask the user to say something or ask a question.`;
     }
 
   } else if (text === '__SILENCE__2') {
@@ -224,7 +266,7 @@ function handleFirstUserText(text) {
       text = 'Thanks for the talk. Hope to see you again next time!';
     } else {
       console.log('📡 GPT: це друга мовчанка після розмови. Формуємо прощальну фразу.');
-      text = `${lastRealUserText} - визнач яка це мова. Не говори що це за мова, а просто цією мовою скажи, що ти дякуєш за розмову, бажаєш всього найкращого і до наступного разу. Тобто дякування за розмову, побажання всього найкращого і сподівання побачитися наступного разу має бути сказано визначеною мовою і тільки такою!!!`;
+      text = `${lastRealUserText} This is just a helper text to detect the language. Do not repeat or react to it. Do not mention which language it is. Simply say, in that detected language only, that you are thankful for the conversation, you wish the user all the best, and hope to see them next time.`;
     }
   } else {
     isFinalSilence = false;
@@ -242,74 +284,60 @@ function handleFirstUserText(text) {
     return;
   }
 
+  // 🧠 Використовуємо sendToGPT — ЄДИНЕ джерело
+  const { answer: cleanAnswer, farewell } = await sendToGPT(text);
+  if (!cleanAnswer) return;
 
-  fetch('http://localhost/my-portfolio-fullstack-ai/my-portfolio-fullstack-ai/php/questionAnswer.php', {
+  console.log('✅ GPT-відповідь:', cleanAnswer);
+
+  fetch('http://localhost/my-portfolio-fullstack-ai/my-portfolio-fullstack-ai/php/tts.php', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question: text })
+    body: new URLSearchParams({ text: cleanAnswer })
   })
-    .then(response => response.json())
-    .then(data => {
-      if (data.status === 'error') {
-        console.error('❌ GPT error:', data.message);
-        alert('GPT не відповів 😢');
+    .then(response => {
+      if (!response.ok) throw new Error(`🛑 HTTP error! status: ${response.status}`);
+      return response.blob();
+    })
+    .then(audioBlob => {
+      const audioURL = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioURL);
+
+      if (!getConversationActive()) {
+        console.warn('🛑 Розмова зупинена — не запускаємо відтворення голосу.');
         return;
       }
 
-      console.log('✅ GPT-відповідь:', data.answer);
+      if (faceMesh && avatar) {
+        playVoiceWithMimic(audioURL, faceMesh, avatar).then(() => {
+          console.log('🔁 Відповідь завершено. Повертаємось до прослуховування...');
 
-      fetch('http://localhost/my-portfolio-fullstack-ai/my-portfolio-fullstack-ai/php/tts.php', {
-        method: 'POST',
-        body: new URLSearchParams({ text: data.answer })
-      })
-        .then(response => {
-          if (!response.ok) throw new Error(`🛑 HTTP error! status: ${response.status}`);
-          return response.blob();
-        })
-        .then(audioBlob => {
-          const audioURL = URL.createObjectURL(audioBlob);
-          const audio = new Audio(audioURL);
-
-          if (!getConversationActive()) {
-            console.warn('🛑 Розмова зупинена — не запускаємо відтворення голосу.');
+          if (isFinalSilence || farewell) {
+            console.log('👋 Завершуємо сцену після мовчанки або прощання');
+            import('./avatar-entry.js').then(module => module.stopConversation());
             return;
           }
 
-          if (faceMesh && avatar) {
-            playVoiceWithMimic(audioURL, faceMesh, avatar).then(() => {
-              console.log('🔁 Відповідь завершено. Повертаємось до прослуховування...');
-
-              if (isFinalSilence) {
-                console.log('👋 Завершуємо сцену після другої мовчанки');
-                import('./avatar-entry.js').then(module => module.stopConversation());
-                return;
-              }
-              
-              if (!getConversationActive()) {
-                console.warn('🛑 Розмова вже зупинена — не повертаємось до прослуховування.');
-                return;
-              }
-
-              if (!micStream || micStream.getTracks().some(t => t.readyState === 'ended')) {
-                console.warn('🎤 Мікрофон вимкнено. Слухання скасовано.');
-                return;
-              }
-
-              listenToSpeech(micStream);
-            });
-          } else {
-            audio.play().then(() => {
-              console.log('▶️ Голос відтворюється (без міміки)...');
-            });
+          if (!getConversationActive()) {
+            console.warn('🛑 Розмова вже зупинена — не повертаємось до прослуховування.');
+            return;
           }
-        })
-        .catch(err => {
-          console.error('❌ Помилка під час запиту до tts.php:', err);
-          alert('Не вдалося озвучити відповідь. Спробуй ще раз.');
+
+          if (!micStream || micStream.getTracks().some(t => t.readyState === 'ended')) {
+            console.warn('🎤 Мікрофон вимкнено. Слухання скасовано.');
+            return;
+          }
+
+          listenToSpeech(micStream);
         });
+      } else {
+        audio.play().then(() => {
+          console.log('▶️ Голос відтворюється (без міміки)...');
+        });
+      }
     })
     .catch(err => {
-      console.error('❌ GPT fetch помилка:', err);
-      alert('Не вдалося отримати відповідь від GPT');
+      console.error('❌ Помилка під час запиту до tts.php:', err);
+      alert('Не вдалося озвучити відповідь. Спробуй ще раз.');
     });
 }
+
