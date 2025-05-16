@@ -42,8 +42,12 @@ if (button && container && photo) {
     if (!isActive) {
       isLaunching = true;
       setConversationActive(true);
+      photo.classList.add('loading');
       button.textContent = 'Stop Talk';
-      startIntroSequence(container);
+
+      setTimeout(() => {
+        startIntroSequence(container);
+      }, 300);
     }
 
     // ⏹ Зупинка
@@ -73,6 +77,7 @@ export function stopConversation() {
 
   // 📷 Повернути фото
   photo.classList.remove('fade-out');
+  photo.classList.remove('loading');
   container.classList.remove('fade-in');
   container.innerHTML = '';
   button.textContent = 'Talk with me';
