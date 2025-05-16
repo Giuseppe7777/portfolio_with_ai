@@ -8,6 +8,7 @@ import { setMicStream, getConversationActive } from './state.js';
 let faceMesh = null;
 let avatar = null;
 let micStream = null;
+let silenceCount = 0;
 
 export function setAvatarContext(mesh, model) {
   faceMesh = mesh;
@@ -55,6 +56,7 @@ export function promptMicrophoneAccess() {
   });
 }
 
+let isFinalSilence = false;
 let lastUserText = '';
 
 function listenToSpeech(stream) {
@@ -114,8 +116,24 @@ function listenToSpeech(stream) {
   const stopAll = () => {
     clearInterval(silenceInterval);
     clearTimeout(initialSilenceTimer);
-    mediaRecorder.stop();
     audioContext.close();
+
+    if (!speaking) {
+      silenceCount++;
+      console.log(`🤐 Виявлено тишу. Мовчанок поспіль: ${silenceCount}`);
+
+      if (silenceCount === 1) {
+        console.log('🟡 Перша мовчанка — надсилаємо __SILENCE__1 до GPT');
+        handleFirstUserText('__SILENCE__1');
+      } else if (silenceCount === 2) {
+        console.log('🔴 Друга мовчанка — надсилаємо __SILENCE__2 до GPT');
+        handleFirstUserText('__SILENCE__2');
+      }
+      return; 
+    }
+    console.log('🗣️ Користувач щось сказав — обнуляємо лічильник мовчанок');
+    silenceCount = 0;
+    mediaRecorder.stop();
   };
 
   mediaRecorder.ondataavailable = (event) => {
@@ -129,6 +147,7 @@ function listenToSpeech(stream) {
       console.warn('⚠️ Порожній аудіо-файл. Пропускаємо розпізнавання.');
       return;
     }
+
     const timestamp = new Date().toISOString();
 
     console.log('✅ Запис завершено. Blob:', audioBlob);
@@ -164,6 +183,19 @@ function listenToSpeech(stream) {
 }
 
 function handleFirstUserText(text) {
+  if (text === '__SILENCE__1') {
+    console.log('📡 GPT: це перша мовчанка. Формуємо фразу з проханням повторити.');
+    isFinalSilence = false;
+    text = 'Користувач мовчить. Скажи, що не почув його і попроси повторити.';
+  } else if (text === '__SILENCE__2') {
+    console.log('📡 GPT: це друга мовчанка. Формуємо прощальну фразу.');
+    isFinalSilence = true;
+    text = 'Користувач знову мовчить. Попрощайся і заверши розмову.';
+  } else {
+    isFinalSilence = false;
+  }
+
+
   if (!getConversationActive()) {
     console.warn('🛑 Розмова була зупинена до GPT-запиту — не звертаємося до GPT.');
     return;
@@ -213,7 +245,12 @@ function handleFirstUserText(text) {
             playVoiceWithMimic(audioURL, faceMesh, avatar).then(() => {
               console.log('🔁 Відповідь завершено. Повертаємось до прослуховування...');
 
-              // ⛔ 🔒 Перевірка, чи мікрофон ще живий
+              if (isFinalSilence) {
+                console.log('👋 Завершуємо сцену після другої мовчанки');
+                import('./avatar-entry.js').then(module => module.stopConversation());
+                return;
+              }
+              
               if (!micStream || micStream.getTracks().some(t => t.readyState === 'ended')) {
                 console.warn('🎤 Мікрофон вимкнено. Слухання скасовано.');
                 return;
