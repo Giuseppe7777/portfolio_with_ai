@@ -1,73 +1,83 @@
-// public/js/avatar-realtime.js
 
 let pc, dc;
 
 async function startRealtimeAvatar() {
-  console.log('[🔁 INIT] Requesting session token from PHP');
+  console.log('[🔁 INIT] request session-token…');
 
-  const tokenRes = await fetch('/php/realtime-session-token.php');
-  const tokenData = await tokenRes.json();
-  const clientSecret = tokenData.client_secret?.value;
+  /* ── 1. BER token для WebRTC ───────────────────── */
+  const tokenRes = await fetch('http://localhost/my-portfolio-fullstack-ai/my-portfolio-fullstack-ai/php/realtime-session-token.php');
+  const tokenJson  = await tokenRes.json();
+  const clientKey  = tokenJson?.client_secret?.value;
 
-  if (!clientSecret) {
-    console.error('[⛔ ERROR] No client_secret received');
+  if (!clientKey) {                      // без ключа — стоп
+    console.error('[⛔]  client_secret missing');
     return;
   }
+  console.log('[🔐 TOKEN]', clientKey);
 
-  console.log('[🔐 TOKEN]', clientSecret);
+  /* ── 2. WebRTC peer-connection ─────────────────── */
+  pc = new RTCPeerConnection({
+    bundlePolicy : 'max-bundle',
+    rtcpMuxPolicy: 'require',
+    iceServers   : []          // STUN / TURN не потрібні
+  });
 
-  // 1. Створюємо WebRTC peer connection
-  pc = new RTCPeerConnection();
-
-  // 2. Отримуємо мікрофон
-  const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
+  /* ── 3. мікрофон → аудіо-трек ──────────────────── */
+  const mic = await navigator.mediaDevices.getUserMedia({ audio:true });
   pc.addTrack(mic.getTracks()[0]);
 
-  // 3. Створюємо <audio> для прослуховування GPT
-  const audioEl = document.createElement('audio');
-  audioEl.autoplay = true;
-  pc.ontrack = (e) => {
-    console.log('[🎧 AUDIO STREAM RECEIVED]');
-    audioEl.srcObject = e.streams[0];
-  };
-
-  // 4. Створюємо data channel для подій GPT (текст, функції тощо)
-  dc = pc.createDataChannel("oai-events");
-  dc.onmessage = (e) => {
+  /* ── 4. дата-канал для івентів GPT ─────────────── */
+  dc = pc.createDataChannel('oai-events');
+  dc.onmessage = (e)=>{
     const msg = JSON.parse(e.data);
     console.log('[📥 EVENT]', msg);
 
-    if (msg.type === 'response.text.delta') {
-      console.log('[🧠 TEXT]', msg.delta?.value);
-    }
-
-    if (msg.type === 'response.audio.delta') {
-      console.log('[🗣️ AUDIO CHUNK]', msg.delta);
-    }
+    if (msg.type === 'response.text.delta')   console.log('[🧠 TEXT ]', msg.delta?.value);
+    if (msg.type === 'response.audio.delta')  console.log('[🗣️ CHUNK]', msg.delta);
   };
 
-  // 5. Готуємо SDP
+  /* ── 5. вхідне аудіо від GPT ───────────────────── */
+  const audioEl = document.createElement('audio');
+  audioEl.autoplay = true;
+  pc.ontrack = ev => {
+    console.log('[🎧 AUDIO STREAM]');
+    audioEl.srcObject = ev.streams[0];
+  };
+
+  /* ── 6. SDP-offer → OpenAI Realtime ────────────── */
   const offer = await pc.createOffer();
   await pc.setLocalDescription(offer);
+  console.log('[📤 SDP OFFER]', offer.sdp);
 
-  const baseUrl = "https://api.openai.com/v1/realtime";
-  const model = "gpt-4o-realtime-preview-2024-12-17";
+  const base   = 'https://api.openai.com/v1/realtime';
+  const model  = 'gpt-4o-realtime-preview-2024-12-17'; // ↞ той самий, що у PHP
 
-  const sdpRes = await fetch(`${baseUrl}?model=${model}`, {
-    method: "POST",
-    body: offer.sdp,
+  const resp = await fetch(`${base}?model=${model}`, {
+    method : 'POST',
+    body   : offer.sdp,                 // НЕ JSON!
     headers: {
-      Authorization: `Bearer ${clientSecret}`,
-      "Content-Type": "application/sdp",
-    },
+      'Authorization': `Bearer ${clientKey}`,
+      'Content-Type' : 'application/sdp',
+      'OpenAI-Beta'  : 'realtime=v1'
+    }
   });
 
-  const answer = {
-    type: "answer",
-    sdp: await sdpRes.text(),
-  };
+  if (!resp.ok){
+    console.error('[❌ API ERROR]', await resp.text());
+    return;
+  }
 
-  await pc.setRemoteDescription(answer);
+  /* ── 7. SDP-answer ← OpenAI ────────────────────── */
+  const answerSdp = await resp.text();
+  await pc.setRemoteDescription({ type:'answer', sdp:answerSdp });
 
   console.log('[✅ CONNECTED] Realtime GPT session ready.');
 }
+
+/* робимо функцію глобальною, щоб викликати з консолі */
+window.startRealtimeAvatar = startRealtimeAvatar;
+
+
+
+
+//  startRealtimeAvatar()
