@@ -1,5 +1,6 @@
 import { playVoiceWithMimic } from "../voice/playVoiceWithMimic";
 import { setMicStream, getConversationActive } from './state.js';
+import { playVoiceStreamWithMimic } from "../voice/playVoiceStreamWithMimic.js";
 
 /**
  * Показує кнопку для дозволу на мікрофон і починає слухати, якщо користувач погодився
@@ -290,54 +291,87 @@ async function handleFirstUserText(text) {
 
   console.log('✅ GPT-відповідь:', cleanAnswer);
 
-  fetch('http://localhost/my-portfolio-fullstack-ai/my-portfolio-fullstack-ai/php/tts.php', {
-    method: 'POST',
-    body: new URLSearchParams({ text: cleanAnswer })
-  })
-    .then(response => {
-      if (!response.ok) throw new Error(`🛑 HTTP error! status: ${response.status}`);
-      return response.blob();
-    })
-    .then(audioBlob => {
-      const audioURL = URL.createObjectURL(audioBlob);
-      const audio = new Audio(audioURL);
+  // fetch('http://localhost/my-portfolio-fullstack-ai/my-portfolio-fullstack-ai/php/tts.php', {
+  //   method: 'POST',
+  //   body: new URLSearchParams({ text: cleanAnswer })
+  // })
+  //   .then(response => {
+  //     if (!response.ok) throw new Error(`🛑 HTTP error! status: ${response.status}`);
+  //     return response.blob();
+  //   })
+  //   .then(audioBlob => {
+  //     const audioURL = URL.createObjectURL(audioBlob);
+  //     const audio = new Audio(audioURL);
 
-      if (!getConversationActive()) {
-        console.warn('🛑 Розмова зупинена — не запускаємо відтворення голосу.');
+  //     if (!getConversationActive()) {
+  //       console.warn('🛑 Розмова зупинена — не запускаємо відтворення голосу.');
+  //       return;
+  //     }
+
+  //     if (faceMesh && avatar) {
+  //       playVoiceWithMimic(audioURL, faceMesh, avatar).then(() => {
+  //         console.log('🔁 Відповідь завершено. Повертаємось до прослуховування...');
+
+  //         if (isFinalSilence || farewell) {
+  //           console.log('👋 Завершуємо сцену після мовчанки або прощання');
+  //           import('./avatar-entry.js').then(module => module.stopConversation());
+  //           return;
+  //         }
+
+  //         if (!getConversationActive()) {
+  //           console.warn('🛑 Розмова вже зупинена — не повертаємось до прослуховування.');
+  //           return;
+  //         }
+
+  //         if (!micStream || micStream.getTracks().some(t => t.readyState === 'ended')) {
+  //           console.warn('🎤 Мікрофон вимкнено. Слухання скасовано.');
+  //           return;
+  //         }
+
+  //         listenToSpeech(micStream);
+  //       });
+  //     } else {
+  //       audio.play().then(() => {
+  //         console.log('▶️ Голос відтворюється (без міміки)...');
+  //       });
+  //     }
+  //   })
+  //   .catch(err => {
+  //     console.error('❌ Помилка під час запиту до tts.php:', err);
+  //     alert('Не вдалося озвучити відповідь. Спробуй ще раз.');
+  //   });
+
+  // =====================================================================================
+
+  /* ---------- STREAM-TTS ---------- */
+  (async () => {
+    try {
+      await playVoiceStreamWithMimic(cleanAnswer, faceMesh, avatar);
+
+      console.log('🔁 Відповідь (stream) завершена');
+      if (isFinalSilence || farewell) {
+        console.log('👋 Завершуємо сцену після мовчанки / прощання');
+        import('./avatar-entry.js').then(m => m.stopConversation());
         return;
       }
-
-      if (faceMesh && avatar) {
-        playVoiceWithMimic(audioURL, faceMesh, avatar).then(() => {
-          console.log('🔁 Відповідь завершено. Повертаємось до прослуховування...');
-
-          if (isFinalSilence || farewell) {
-            console.log('👋 Завершуємо сцену після мовчанки або прощання');
-            import('./avatar-entry.js').then(module => module.stopConversation());
-            return;
-          }
-
-          if (!getConversationActive()) {
-            console.warn('🛑 Розмова вже зупинена — не повертаємось до прослуховування.');
-            return;
-          }
-
-          if (!micStream || micStream.getTracks().some(t => t.readyState === 'ended')) {
-            console.warn('🎤 Мікрофон вимкнено. Слухання скасовано.');
-            return;
-          }
-
-          listenToSpeech(micStream);
-        });
-      } else {
-        audio.play().then(() => {
-          console.log('▶️ Голос відтворюється (без міміки)...');
-        });
+      if (!getConversationActive()) {
+        console.warn('🛑 Розмова зупинена — не слухаємо далі');
+        return;
       }
-    })
-    .catch(err => {
-      console.error('❌ Помилка під час запиту до tts.php:', err);
-      alert('Не вдалося озвучити відповідь. Спробуй ще раз.');
-    });
+      if (!micStream || micStream.getTracks()
+          .some(t => t.readyState === 'ended')) {
+        console.warn('🎤 Мікрофон вимкнено.');
+        return;
+      }
+      listenToSpeech(micStream);
+    } catch (err) {
+      console.error('❌ STREAM-TTS помилка:', err);
+      alert('Не вдалося озвучити відповідь (stream).');
+    }
+  })();
+
+  // =====================================================================================
+
+
 }
 
