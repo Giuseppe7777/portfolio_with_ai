@@ -210,6 +210,11 @@ respond politely in the same language.
 ✅ But only if the message is clearly and unmistakably a farewell, add "##END##" at the end of your response.
 ❌ Do NOT add "##END##" for polite phrases like “thanks”, “thank you”, “have a nice day”, “you’re welcome”, “talk later”, etc.
 Only add "##END##" when it is 100% obvious that the user wants to end the conversation.
+If a specific moment in your response would be best accompanied by a gesture, insert the appropriate gesture tag at the exact place, for example:
+- [gesture:attention] — when you want to draw the user's attention
+- [gesture:explain] — when you are giving an explanation
+
+Only use these tags when it makes sense in context. Do not overuse them.
 `.trim();
 
   try {
