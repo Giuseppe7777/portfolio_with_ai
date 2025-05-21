@@ -1,4 +1,4 @@
-import { playVoiceWithMimic } from "../voice/playVoiceWithMimic.js";
+import { playVoiceStreamWithMimic } from "../voice/playVoiceStreamWithMimic.js";
 import { movementsAndMimicWhileNotTalking } from "./movAndMimWhileNotTalking.js";
 import { promptMicrophoneAccess, setAvatarContext } from "./listenUserSpeech.js";
 import { getConversationActive } from './state.js';
@@ -12,19 +12,19 @@ export async function startIntroVoice(faceMesh, avatar) {
   // 🔗 Передаємо faceMesh і avatar у listenUserSpeech.js
   setAvatarContext(faceMesh, avatar);
 
-  const audioUrl = "/audio/intro-voice-1.mp3";
+  const introText = `Hello! I'm Yosyp Malanka, a web developer from Ukraine, now living in Austria. Let's talk!`;
 
-  // 🎙️ Відтворення голосу з мімікою + запуск idle-анімації після
-  const duration = await playVoiceWithMimic(audioUrl, faceMesh, avatar, () => {
-    movementsAndMimicWhileNotTalking(faceMesh, avatar);
-  });
+  // ▶️ Озвучуємо інтро
+  await playVoiceStreamWithMimic(introText, faceMesh, avatar);
 
-  // ⏱️ Показуємо кнопку за 5 сек до кінця
-  setTimeout(() => {
-    if (getConversationActive()) {
-      promptMicrophoneAccess();
-    } else {
-      console.log('🛑 Розмова була зупинена до появи кнопки мікрофона.');
-    }
-  }, (duration - 5) * 1000);
+  // 🧠 Після завершення голосу — запускаємо міміку у спокої
+  movementsAndMimicWhileNotTalking(faceMesh, avatar);
+
+  // ⏱️ Показуємо кнопку мікрофона 
+  if (getConversationActive()) {
+    promptMicrophoneAccess();
+  } else {
+    console.log('🛑 Розмова була зупинена до появи кнопки мікрофона.');
+  }
+  
 }

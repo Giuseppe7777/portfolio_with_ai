@@ -1,4 +1,3 @@
-import { playVoiceWithMimic } from "../voice/playVoiceWithMimic";
 import { setMicStream, getConversationActive } from './state.js';
 import { playVoiceStreamWithMimic } from "../voice/playVoiceStreamWithMimic.js";
 
@@ -150,56 +149,54 @@ function listenToSpeech(stream) {
     console.log('📥 Отримано шматок аудіо:', event.data);
   };
 
-  mediaRecorder.onstop = () => {
+mediaRecorder.onstop = () => {
+  if (!getConversationActive()) {
+    console.warn('🛑 Розмова вже завершена — пропускаємо onstop повністю');
+    return;
+  }
 
-    if (!getConversationActive()) {
-      console.warn('🛑 Розмова вже завершена — пропускаємо onstop повністю');
-      return;
-    }
+  if (skipSTT) {
+    console.warn('🛑 Пропускаємо STT — це була мовчанка');
+    skipSTT = false; 
+    return;
+  }
 
-    if (skipSTT) {
-      console.warn('🛑 Пропускаємо STT — це була мовчанка');
-      skipSTT = false; 
-      return;
-    }
+  const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+  if (audioBlob.size === 0) {
+    console.warn('⚠️ Порожній аудіо-файл. Пропускаємо розпізнавання.');
+    return;
+  }
 
-    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-    if (audioBlob.size === 0) {
-      console.warn('⚠️ Порожній аудіо-файл. Пропускаємо розпізнавання.');
-      return;
-    }
+  const timestamp = new Date().toISOString();
+  console.log('✅ Запис завершено. Blob:', audioBlob);
+  console.log('🕓 Timestamp запису:', timestamp);
 
-    const timestamp = new Date().toISOString();
+  const formData = new FormData();
+  formData.append('audio', audioBlob, `voice-${timestamp}.webm`);
+  formData.append('timestamp', timestamp);
 
-    console.log('✅ Запис завершено. Blob:', audioBlob);
-    console.log('🕓 Timestamp запису:', timestamp);
+  console.log('📤 Відправляємо аудіо на розпізнавання мови...');
 
-    const formData = new FormData();
-    formData.append('audio', audioBlob, `voice-${timestamp}.webm`);
-    formData.append('timestamp', timestamp);
+  fetch('http://localhost/my-portfolio-fullstack-ai/my-portfolio-fullstack-ai/php/speechToText.php', {
+    method: 'POST',
+    body: formData
+  })
+    .then(res => res.json())
+    .then(data => {
+      if (data.status === 'error') {
+        console.error('⚠️ Помилка від speechToText.php:', data.message);
+        alert('Не вдалося розпізнати мову. Спробуй ще раз 😊');
+        return;
+      }
 
-    console.log('📤 Відправляємо аудіо на розпізнавання мови...');
+      lastUserText = data.text;
+      lastRealUserText = lastUserText; 
+      console.log('📌 Збережено текст користувача:', lastUserText);
 
-    fetch('http://localhost/my-portfolio-fullstack-ai/my-portfolio-fullstack-ai/php/speechToText.php', {
-      method: 'POST',
-      body: formData
+      handleFirstUserText(lastUserText);
     })
-      .then(res => res.json())
-      .then(data => {
-        if (data.status === 'error') {
-          console.error('⚠️ Помилка від speechToText.php:', data.message);
-          alert('Не вдалося розпізнати мову. Спробуй ще раз 😊');
-          return;
-        }
-
-        lastUserText = data.text;
-        lastRealUserText = lastUserText; 
-        console.log('📌 Збережено текст користувача:', lastUserText);
-
-        handleFirstUserText(lastUserText);
-      })
-      .catch(err => console.error('❌ Speech-to-Text помилка:', err));
-  };
+    .catch(err => console.error('❌ Speech-to-Text помилка:', err));
+};
 
   mediaRecorder.start();
   console.log('⏺️ Запис запущено');
@@ -207,11 +204,12 @@ function listenToSpeech(stream) {
 
 async function sendToGPT(text) {
   const systemPrompt = `
-Your task is to respond to the user's message. 
-If the user is saying goodbye in any language, 
-you must politely say goodbye in the same language and nothing else. 
-If the message is truly a farewell, add "##END##" at the end of your response. 
-❗Do not add "##END##" if it was not a real farewell. Only use it when the user is clearly ending the conversation.
+You are a multilingual assistant.
+If the user is clearly saying goodbye in any language (e.g. “goodbye”, “see you”, “bye”, “до побачення”, “tschüss”, “auf wiedersehen”, etc.),
+respond politely in the same language.
+✅ But only if the message is clearly and unmistakably a farewell, add "##END##" at the end of your response.
+❌ Do NOT add "##END##" for polite phrases like “thanks”, “thank you”, “have a nice day”, “you’re welcome”, “talk later”, etc.
+Only add "##END##" when it is 100% obvious that the user wants to end the conversation.
 `.trim();
 
   try {
@@ -291,58 +289,6 @@ async function handleFirstUserText(text) {
 
   console.log('✅ GPT-відповідь:', cleanAnswer);
 
-  // fetch('http://localhost/my-portfolio-fullstack-ai/my-portfolio-fullstack-ai/php/tts.php', {
-  //   method: 'POST',
-  //   body: new URLSearchParams({ text: cleanAnswer })
-  // })
-  //   .then(response => {
-  //     if (!response.ok) throw new Error(`🛑 HTTP error! status: ${response.status}`);
-  //     return response.blob();
-  //   })
-  //   .then(audioBlob => {
-  //     const audioURL = URL.createObjectURL(audioBlob);
-  //     const audio = new Audio(audioURL);
-
-  //     if (!getConversationActive()) {
-  //       console.warn('🛑 Розмова зупинена — не запускаємо відтворення голосу.');
-  //       return;
-  //     }
-
-  //     if (faceMesh && avatar) {
-  //       playVoiceWithMimic(audioURL, faceMesh, avatar).then(() => {
-  //         console.log('🔁 Відповідь завершено. Повертаємось до прослуховування...');
-
-  //         if (isFinalSilence || farewell) {
-  //           console.log('👋 Завершуємо сцену після мовчанки або прощання');
-  //           import('./avatar-entry.js').then(module => module.stopConversation());
-  //           return;
-  //         }
-
-  //         if (!getConversationActive()) {
-  //           console.warn('🛑 Розмова вже зупинена — не повертаємось до прослуховування.');
-  //           return;
-  //         }
-
-  //         if (!micStream || micStream.getTracks().some(t => t.readyState === 'ended')) {
-  //           console.warn('🎤 Мікрофон вимкнено. Слухання скасовано.');
-  //           return;
-  //         }
-
-  //         listenToSpeech(micStream);
-  //       });
-  //     } else {
-  //       audio.play().then(() => {
-  //         console.log('▶️ Голос відтворюється (без міміки)...');
-  //       });
-  //     }
-  //   })
-  //   .catch(err => {
-  //     console.error('❌ Помилка під час запиту до tts.php:', err);
-  //     alert('Не вдалося озвучити відповідь. Спробуй ще раз.');
-  //   });
-
-  // =====================================================================================
-
   /* ---------- STREAM-TTS ---------- */
   (async () => {
     try {
@@ -350,6 +296,7 @@ async function handleFirstUserText(text) {
 
       console.log('🔁 Відповідь (stream) завершена');
       if (isFinalSilence || farewell) {
+        console.log('🔍 Перевірка умови виходу: isFinalSilence =', isFinalSilence, ', farewell =', farewell);
         console.log('👋 Завершуємо сцену після мовчанки / прощання');
         import('./avatar-entry.js').then(m => m.stopConversation());
         return;
