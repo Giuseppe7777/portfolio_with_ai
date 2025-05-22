@@ -101,7 +101,8 @@ export async function playVoiceStreamWithMimic(text, faceMesh, avatar, gestures 
               console.log("[TTS-STREAM] ▶️ audio.play() успішно");
 
                   // --- Approximate timing для жестів ---
-              const avgWordsPerSecond = 2.3; // Підібрати під твій голос!
+              const avgWordsPerSecond = 1.6;
+
               if (gestures.length > 0 && totalWords > 0) {
                 gestures.forEach(g => {
                   // Таймінг у секундах — gesture на потрібному слові
@@ -124,7 +125,7 @@ export async function playVoiceStreamWithMimic(text, faceMesh, avatar, gestures 
                   }, timeMs);
                 });
               }
-    // --- /Approximate timing ---
+                // --- /Approximate timing ---
 
               if (ctx && ctx.state === "suspended") ctx.resume();
               setTalking(true);
@@ -192,6 +193,8 @@ export async function playVoiceStreamWithMimic(text, faceMesh, avatar, gestures 
         body: JSON.stringify({ text })
       });
 
+      console.log('Response content-type:', resp.headers.get('content-type'));
+
       const reader = resp.body.getReader();
       let total = 0;
 
@@ -229,6 +232,7 @@ export async function playVoiceStreamWithMimic(text, faceMesh, avatar, gestures 
     // Очищення ресурсу при завершенні відтворення
     audio.addEventListener("ended", () => {
       console.log("[TTS-STREAM] ⏹️ завершено");
+
       audio.src = "";
       URL.revokeObjectURL(activeAudioURL);
       activeAudioURL = null;

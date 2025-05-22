@@ -13,7 +13,6 @@ export async function startIntroVoice(faceMesh, avatar) {
   setAvatarContext(faceMesh, avatar);
 
   const introText = `Hello! I'm Yosyp Malanka, a web developer from Ukraine, now living in Austria. Let's talk!`;
-
   // ▶️ Озвучуємо інтро
   await playVoiceStreamWithMimic(introText, faceMesh, avatar);
 

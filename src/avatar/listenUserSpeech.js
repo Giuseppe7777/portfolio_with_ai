@@ -249,12 +249,17 @@ respond politely in the same language.
 ❌ Do NOT add "##END##" for polite phrases like “thanks”, “thank you”, “have a nice day”, “you’re welcome”, “talk later”, etc.
 Only add "##END##" when it is 100% obvious that the user wants to end the conversation.
 
-If the answer contains a phrase that requires a gesture (for example: "explain", "attention"), always insert a gesture marker in square brackets (e.g. [gesture:explain], [gesture:attention]) **as a separate word, directly before the sentence or phrase that requires the gesture.**
+If the answer contains a phrase or sentence that logically requires attention, emphasis, or explanation (for example: a list of reasons, a key argument, an especially important warning, or a direct explanation), always insert a gesture marker in square brackets as a separate word, directly before the sentence or phrase that requires the gesture. For example: [gesture:explain] or [gesture:attention].
+The marker [gesture:attention] should be used before key points, warnings, or especially important facts, even if the word "attention" is not used in the text.
+The marker [gesture:explain] should be used before sentences where an explanation or detailed reasoning is given, even if the word "explain" is not explicitly mentioned.
 Use only these two markers: "explain" and "attention".
-**Never insert more than one marker before a single word or phrase** (i.e., do not stack markers; only one gesture marker can be used before any given sentence or phrase).
-If there are several gestures, mark each one at the correct place in the text, but only one marker per place.
-
-Only use these tags when it makes sense in context. Do not overuse them.
+Only one marker can appear before a phrase.
+Do not overuse the markers, but use them whenever the communication logic of the answer requires highlighting or explaining something important.
+Here are some examples:
+- [gesture:attention] Always look both ways before crossing the street.
+- [gesture:explain] The main reason for this is that English is the language of global business.
+- [gesture:attention] Key point: Don't share your password with anyone.
+Insert the marker as a separate word, directly before the relevant phrase.
 `.trim();
 
 
@@ -370,9 +375,57 @@ async function handleFirstUserText(text) {
     console.error('❌ STREAM-TTS помилка:', err);
     alert('Не вдалося озвучити відповідь (stream).');
   };
-
-  // =====================================================================================
-
-
 }
+
+
+/*
+
+--------------------------
+listenUserSpeech.js:344 🪄 Оригінал із gesture: Ось 8 коротких пунктів, чому водій за кермом має бути дуже уважним:
+
+1. [gesture:attention] Порушення правил дорожнього руху може призвести до аварій.
+2. Увага допомагає уникнути небезпечних ситуацій на дорозі.
+3. [gesture:attention] Реакція на несподівані дії інших учасників руху може врятувати життя.
+4. Водії повинні слідкувати за дорожніми знаками та сигналами.
+5. [gesture:explain] Технічні несправності автомобіля можуть виникнути раптово, тому важливо бути уважним до звуків та поведінки автомобіля.
+6. Стан дороги може змінюватися, тому важливо адаптувати швидкість відповідно до умов.
+7. [gesture:attention] Відволікання, такі як телефонні дзвінки чи розмови з пасажирами, підвищують ризик аварій.
+8. Безпека пішоходів та велосипедистів залежить від уважності водіїв.
+listenUserSpeech.js:345 📝 Розпарсений текст (без тегів): Ось 8 коротких пунктів, чому водій за кермом має бути дуже уважним:
+
+1.  Порушення правил дорожнього руху може призвести до аварій.
+2. Увага допомагає уникнути небезпечних ситуацій на дорозі.
+3.  Реакція на несподівані дії інших учасників руху може врятувати життя.
+4. Водії повинні слідкувати за дорожніми знаками та сигналами.
+5.  Технічні несправності автомобіля можуть виникнути раптово, тому важливо бути уважним до звуків та поведінки автомобіля.
+6. Стан дороги може змінюватися, тому важливо адаптувати швидкість відповідно до умов.
+7.  Відволікання, такі як телефонні дзвінки чи розмови з пасажирами, підвищують ризик аварій.
+8. Безпека пішоходів та велосипедистів залежить від уважності водіїв.
+listenUserSpeech.js:346 🎬 Масив gesture для TTS: (4) [{…}, {…}, {…}, {…}] Всього слів: 99
+listenUserSpeech.js:347 ---------------------------
+listenUserSpeech.js:351 🎯 gesture-теги у відповіді: (4) ['attention', 'attention', 'explain', 'attention']
+playVoiceStreamWithMimic.js:15 [TTS-STREAM] ▶️ старт потокового озвучення…
+playVoiceStreamWithMimic.js:188 [TTS-STREAM] 🚀 Відправляємо текст у ElevenLabs: Ось 8 коротких пунктів, чому водій за кермом має бути дуже уважним:
+
+1.  Порушення правил дорожнього руху може призвести до аварій.
+2. Увага допомагає уникнути небезпечних ситуацій на дорозі.
+3.  Реакція на несподівані дії інших учасників руху може врятувати життя.
+4. Водії повинні слідкувати за дорожніми знаками та сигналами.
+5.  Технічні несправності автомобіля можуть виникнути раптово, тому важливо бути уважним до звуків та поведінки автомобіля.
+6. Стан дороги може змінюватися, тому важливо адаптувати швидкість відповідно до умов.
+7.  Відволікання, такі як телефонні дзвінки чи розмови з пасажирами, підвищують ризик аварій.
+8. Безпека пішоходів та велосипедистів залежить від уважності водіїв.
+playVoiceStreamWithMimic.js:195 Response content-type: audio/mpeg
+playVoiceStreamWithMimic.js:101 [TTS-STREAM] ▶️ audio.play() успішно
+playVoiceStreamWithMimic.js:110 ⏰ Gesture "attention" (approximate) спрацює через 5.65 сек (позиція: слово 13 з 99)
+playVoiceStreamWithMimic.js:110 ⏰ Gesture "attention" (approximate) спрацює через 13.04 сек (позиція: слово 30 з 99)
+playVoiceStreamWithMimic.js:110 ⏰ Gesture "explain" (approximate) спрацює через 21.74 сек (позиція: слово 50 з 99)
+playVoiceStreamWithMimic.js:110 ⏰ Gesture "attention" (approximate) спрацює через 33.91 сек (позиція: слово 78 з 99)
+playVoiceStreamWithMimic.js:204 [TTS-STREAM] ∎ кінець потоку
+playVoiceStreamWithMimic.js:115 🟢 Виконую gesture: attention (на 5.65s, approx)
+playVoiceStreamWithMimic.js:115 🟢 Виконую gesture: attention (на 13.04s, approx)
+playVoiceStreamWithMimic.js:115 🟢 Виконую gesture: explain (на 21.74s, approx)
+playVoiceStreamWithMimic.js:115 🟢 Виконую gesture: attention (на 33.91s, approx)
+
+*/
 
