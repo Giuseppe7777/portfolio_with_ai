@@ -11,7 +11,7 @@ let activeAudioURL = null;
  * @param {THREE.Mesh} faceMesh
  * @param {THREE.Group} avatar
  */
-export async function playVoiceStreamWithMimic(text, faceMesh, avatar) {
+export async function playVoiceStreamWithMimic(text, faceMesh, avatar, gestures = [], totalWords = 0) {
   console.log("[TTS-STREAM] ▶️ старт потокового озвучення…");
 
   // 🧼 Очистка попереднього аудіо
@@ -99,6 +99,33 @@ export async function playVoiceStreamWithMimic(text, faceMesh, avatar) {
           audio.play()
             .then(() => {
               console.log("[TTS-STREAM] ▶️ audio.play() успішно");
+
+                  // --- Approximate timing для жестів ---
+              const avgWordsPerSecond = 2.3; // Підібрати під твій голос!
+              if (gestures.length > 0 && totalWords > 0) {
+                gestures.forEach(g => {
+                  // Таймінг у секундах — gesture на потрібному слові
+                  const timeMs = (g.wordPos / avgWordsPerSecond) * 1000;
+
+                  console.log(
+                    `⏰ Gesture "${g.type}" (approximate) спрацює через ${(timeMs / 1000).toFixed(2)} сек (позиція: слово ${g.wordPos} з ${totalWords})`
+                  );
+
+                  setTimeout(() => {
+                    console.log(`🟢 Виконую gesture: ${g.type} (на ${(timeMs/1000).toFixed(2)}s, approx)`);
+                    if (g.type === 'attention') {
+                      import('../gestures/gestureAttentionWithFinger.js')
+                        .then(m => m.gestureAttentionWithFinger(avatar));
+                    }
+                    if (g.type === 'explain') {
+                      import('../gestures/gestureExplainWithHand.js')
+                        .then(m => m.gestureExplainWithHand(avatar));
+                    }
+                  }, timeMs);
+                });
+              }
+    // --- /Approximate timing ---
+
               if (ctx && ctx.state === "suspended") ctx.resume();
               setTalking(true);
 

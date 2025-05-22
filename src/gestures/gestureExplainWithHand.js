@@ -145,33 +145,3 @@ window.poseControl = {
   },
 };
 
-// import('/src/gestures/gestureExplainWithHand.js').then(m => m.gestureExplainWithHand(avatar));
-
-/*
-poseControl.set('mixamorigRightShoulder', -0.2, 0.4, 0.2);     // плече
-poseControl.set('mixamorigRightArm',      -0.6, 1.0, -0.3);     // плечова частина
-poseControl.set('mixamorigRightForeArm',  -1.0, 0.2,  0.1);     // передпліччя
-poseControl.set('mixamorigRightHand',      0.3, 0.3,  0.5);     // кисть
-
-Типові діапазони, які реально використовуються:
-Реальні повороти рук і суглобів: -1.5 → +1.5
-
-Згинання ліктя (ForeArm): -1.3 → 0
-
-Рух плеча вперед (Arm, Shoulder): -1.0 → +1.0
-
-Кисть: -1.0 → +1.0 на кожній осі
-
-
-poseControl.get('mixamorigRightArm');
-poseControl.get('mixamorigRightForeArm');
-poseControl.get('mixamorigRightHand');
-
-movAndMimWhileNotTalking.js:177 📍 mixamorigRightArm → X=0.969, Y=0.460, Z=-0.219
-movAndMimWhileNotTalking.js:177 📍 mixamorigRightForeArm → X=0.418, Y=0.248, Z=0.082
-movAndMimWhileNotTalking.js:177 📍 mixamorigRightHand → X=0.813, Y=-0.914, Z=0.901
-
-correct - poseControl.set('mixamorigRightArm', 0.969, 0.3236, -0.619);
-poseControl.set('mixamorigRightForeArm', 1.218, 1.148, 0.082); 
-
-*/
