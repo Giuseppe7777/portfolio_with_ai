@@ -5,6 +5,44 @@ import { playVoiceStreamWithMimic } from "../voice/playVoiceStreamWithMimic.js";
  * Показує кнопку для дозволу на мікрофон і починає слухати, якщо користувач погодився
  */
 
+function parseTextWithGestures(text) {
+  const regex = /\[gesture:(explain|attention)\]/g;
+  let match;
+  let lastIndex = 0;
+  let wordCount = 0;
+  let resultText = '';
+  const gestures = [];
+
+  while ((match = regex.exec(text)) !== null) {
+    // Текст до gesture-маркера
+    const plain = text.slice(lastIndex, match.index);
+    resultText += plain;
+    // Додаємо кількість слів до цього місця
+    wordCount += plain.split(/\s+/).filter(w => w).length;
+
+    // Записуємо gesture і позицію в загальному тексті (у словах)
+    gestures.push({
+      type: match[1],
+      wordPos: wordCount // після plain, тобто gesture відноситься до наступного слова
+    });
+
+    lastIndex = regex.lastIndex;
+  }
+
+  // Додаємо текст після останньої мітки
+  const plain = text.slice(lastIndex);
+  resultText += plain;
+
+  // Всього слів у всьому тексті (без gesture-тегів)
+  const totalWords = resultText.split(/\s+/).filter(w => w).length;
+
+  return {
+    plainText: resultText.trim(),
+    gestures,       // [{type: 'attention', wordPos: 5}, ...]
+    totalWords
+  };
+}
+
 let faceMesh = null;
 let avatar = null;
 let micStream = null;
@@ -203,17 +241,22 @@ mediaRecorder.onstop = () => {
 }
 
 async function sendToGPT(text) {
-  const systemPrompt = `
+const systemPrompt = `
 You are a multilingual assistant.
 If the user is clearly saying goodbye in any language (e.g. “goodbye”, “see you”, “bye”, “до побачення”, “tschüss”, “auf wiedersehen”, etc.),
 respond politely in the same language.
 ✅ But only if the message is clearly and unmistakably a farewell, add "##END##" at the end of your response.
 ❌ Do NOT add "##END##" for polite phrases like “thanks”, “thank you”, “have a nice day”, “you’re welcome”, “talk later”, etc.
 Only add "##END##" when it is 100% obvious that the user wants to end the conversation.
-If the answer contains a phrase that requires a gesture (for example: "explain", "attention"), always insert a gesture marker in square brackets (e.g. [gesture:explain], [gesture:attention]) right before the phrase it should be attached to. If there are several gestures, mark each one at the correct place in the text. Use only thees two markers "explain" and "attention"
+
+If the answer contains a phrase that requires a gesture (for example: "explain", "attention"), always insert a gesture marker in square brackets (e.g. [gesture:explain], [gesture:attention]) **as a separate word, directly before the sentence or phrase that requires the gesture.**
+Use only these two markers: "explain" and "attention".
+**Never insert more than one marker before a single word or phrase** (i.e., do not stack markers; only one gesture marker can be used before any given sentence or phrase).
+If there are several gestures, mark each one at the correct place in the text, but only one marker per place.
 
 Only use these tags when it makes sense in context. Do not overuse them.
 `.trim();
+
 
   try {
     const response = await fetch('http://localhost/my-portfolio-fullstack-ai/my-portfolio-fullstack-ai/php/questionAnswer.php', {
@@ -289,40 +332,44 @@ async function handleFirstUserText(text) {
   // 🧠 Використовуємо sendToGPT — ЄДИНЕ джерело
   const { answer: cleanAnswer, farewell } = await sendToGPT(text);
   if (!cleanAnswer) return;
-  
-  console.log('🧩 GPT-ВІДПОВІДЬ ДО ОЗВУЧЕННЯ:', cleanAnswer);
 
+  const { plainText, gestures, totalWords } = parseTextWithGestures(cleanAnswer);
+
+  console.log('---------------------------');
+  console.log('🪄 Оригінал із gesture:', cleanAnswer);
+  console.log('📝 Розпарсений текст (без тегів):', plainText);
+  console.log('🎬 Масив gesture для TTS:', gestures, 'Всього слів:', totalWords);
+  console.log('---------------------------');
+    
   // Шукаємо всі gesture-теги
   const gestureTags = [...cleanAnswer.matchAll(/\[gesture:([^\]]+)\]/g)].map(m => m[1]);
   console.log('🎯 gesture-теги у відповіді:', gestureTags);
 
-  /* ---------- STREAM-TTS ---------- */
-  (async () => {
-    try {
-      await playVoiceStreamWithMimic(cleanAnswer, faceMesh, avatar);
+  /* ---------- STREAM-TTS ---------- */  
+  try {
+    await playVoiceStreamWithMimic(plainText, faceMesh, avatar, gestures, totalWords);      
 
-      console.log('🔁 Відповідь (stream) завершена');
-      if (isFinalSilence || farewell) {
-        console.log('🔍 Перевірка умови виходу: isFinalSilence =', isFinalSilence, ', farewell =', farewell);
-        console.log('👋 Завершуємо сцену після мовчанки / прощання');
-        import('./avatar-entry.js').then(m => m.stopConversation());
-        return;
-      }
-      if (!getConversationActive()) {
-        console.warn('🛑 Розмова зупинена — не слухаємо далі');
-        return;
-      }
-      if (!micStream || micStream.getTracks()
-          .some(t => t.readyState === 'ended')) {
-        console.warn('🎤 Мікрофон вимкнено.');
-        return;
-      }
-      listenToSpeech(micStream);
-    } catch (err) {
-      console.error('❌ STREAM-TTS помилка:', err);
-      alert('Не вдалося озвучити відповідь (stream).');
+    console.log('🔁 Відповідь (stream) завершена');
+    if (isFinalSilence || farewell) {
+      console.log('🔍 Перевірка умови виходу: isFinalSilence =', isFinalSilence, ', farewell =', farewell);
+      console.log('👋 Завершуємо сцену після мовчанки / прощання');
+      import('./avatar-entry.js').then(m => m.stopConversation());
+      return;
     }
-  })();
+    if (!getConversationActive()) {
+      console.warn('🛑 Розмова зупинена — не слухаємо далі');
+      return;
+    }
+    if (!micStream || micStream.getTracks()
+        .some(t => t.readyState === 'ended')) {
+      console.warn('🎤 Мікрофон вимкнено.');
+      return;
+    }
+    listenToSpeech(micStream);
+  } catch (err) {
+    console.error('❌ STREAM-TTS помилка:', err);
+    alert('Не вдалося озвучити відповідь (stream).');
+  };
 
   // =====================================================================================
 
