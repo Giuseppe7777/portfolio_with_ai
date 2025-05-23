@@ -10,17 +10,17 @@ let activeAudioURL = null;
  * @param {string} text
  * @param {THREE.Mesh} faceMesh
  * @param {THREE.Group} avatar
+ * @param {Array} gestures
+ * @param {number} totalWords
  */
 export async function playVoiceStreamWithMimic(text, faceMesh, avatar, gestures = [], totalWords = 0) {
   console.log("[TTS-STREAM] ▶️ старт потокового озвучення…");
 
-  // 🧼 Очистка попереднього аудіо
   if (activeAudioURL) {
     URL.revokeObjectURL(activeAudioURL);
     activeAudioURL = null;
   }
 
-  // === Найголовніше! Завжди створюй новий MediaSource, не використовуй попередній ===
   const mediaSource = new MediaSource();
   const audio = new Audio();
   const audioURL = URL.createObjectURL(mediaSource);
@@ -30,7 +30,6 @@ export async function playVoiceStreamWithMimic(text, faceMesh, avatar, gestures 
   audio.volume = 1.0;
   setCurrentAudio(audio);
 
-  // === Аналіз для міміки ===
   const dict = faceMesh.morphTargetDictionary;
   const infl = faceMesh.morphTargetInfluences;
   const mouthIdx = dict["A25_Jaw_Open"];
@@ -55,11 +54,9 @@ export async function playVoiceStreamWithMimic(text, faceMesh, avatar, gestures 
     let cleaningSourceBuffer = false;
 
     mediaSource.addEventListener("sourceopen", async () => {
-      // 👇 Найголовніше: очищаємо всі старі SourceBuffer ПЕРЕД створенням нового!
       while (mediaSource.sourceBuffers.length > 0) {
         try {
           cleaningSourceBuffer = true;
-          // Додатково: дочекайся, поки buffer не в updating-стані
           const buf = mediaSource.sourceBuffers[0];
           if (buf.updating) {
             await new Promise(r => buf.addEventListener('updateend', r, { once: true }));
@@ -92,40 +89,12 @@ export async function playVoiceStreamWithMimic(text, faceMesh, avatar, gestures 
         updating = false;
         if (!started) {
           started = true;
-          // ==== Стартуємо анімації та звук ====
           window.stopIdleMimic = true;
           movementsAndMimicWhileTalking(faceMesh, avatar);
 
           audio.play()
             .then(() => {
               console.log("[TTS-STREAM] ▶️ audio.play() успішно");
-
-                  // --- Approximate timing для жестів ---
-              const avgWordsPerSecond = 1.6;
-
-              if (gestures.length > 0 && totalWords > 0) {
-                gestures.forEach(g => {
-                  // Таймінг у секундах — gesture на потрібному слові
-                  const timeMs = (g.wordPos / avgWordsPerSecond) * 1000;
-
-                  console.log(
-                    `⏰ Gesture "${g.type}" (approximate) спрацює через ${(timeMs / 1000).toFixed(2)} сек (позиція: слово ${g.wordPos} з ${totalWords})`
-                  );
-
-                  setTimeout(() => {
-                    console.log(`🟢 Виконую gesture: ${g.type} (на ${(timeMs/1000).toFixed(2)}s, approx)`);
-                    if (g.type === 'attention') {
-                      import('../gestures/gestureAttentionWithFinger.js')
-                        .then(m => m.gestureAttentionWithFinger(avatar));
-                    }
-                    if (g.type === 'explain') {
-                      import('../gestures/gestureExplainWithHand.js')
-                        .then(m => m.gestureExplainWithHand(avatar));
-                    }
-                  }, timeMs);
-                });
-              }
-                // --- /Approximate timing ---
 
               if (ctx && ctx.state === "suspended") ctx.resume();
               setTalking(true);
@@ -152,7 +121,7 @@ export async function playVoiceStreamWithMimic(text, faceMesh, avatar, gestures 
                 };
                 animate();
               }
-              // (жести для рук)
+
               setTimeout(() => {
                 requestAnimationFrame(() => {
                   import("../gestures/gestureLeftHandOnWaist.js")
@@ -176,7 +145,6 @@ export async function playVoiceStreamWithMimic(text, faceMesh, avatar, gestures 
                     .catch(console.warn);
                 });
               }, 9500);
-
             })
             .catch((err) => {
               console.error("[TTS-STREAM] play() error:", err);
@@ -187,62 +155,71 @@ export async function playVoiceStreamWithMimic(text, faceMesh, avatar, gestures 
       });
 
       console.log('[TTS-STREAM] 🚀 Відправляємо текст у ElevenLabs:', text);
+      const startTime = performance.now();
       const resp = await fetch("php/tts.php", {
         method: "POST",
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text })
       });
 
-      console.log('Response content-type:', resp.headers.get('content-type'));
-
       const reader = resp.body.getReader();
-      let total = 0;
+      let totalBytes = 0;
+      const audioChunks = [];
 
-      // Читання аудіо-чанків по стріму
       while (true) {
         const { value, done } = await reader.read();
-        if (done) {
-          console.log("[TTS-STREAM] ∎ кінець потоку");
-          streamEnded = true;
-          if (!sb.updating) {
-            try {
-              mediaSource.endOfStream();
-            } catch (e) {
-              console.warn("endOfStream error:", e);
-            }
-          } else {
-            sb.addEventListener("updateend", () => {
-              try {
-                mediaSource.endOfStream();
-              } catch (e) {
-                console.warn("endOfStream error (updateend):", e);
-              }
-            }, { once: true });
-          }
-          break;
-        }
+        if (done) break;
+        audioChunks.push(value);
         queue.push(value);
-        total += value.byteLength;
-        // Для дебагу:
-        // console.log(`[TTS-STREAM] +${value.byteLength}B (∑ ${total})`);
+        totalBytes += value.byteLength;
         feed();
       }
+
+      streamEnded = true;
+      if (!sb.updating) {
+        try { mediaSource.endOfStream(); } catch (e) { }
+      } else {
+        sb.addEventListener("updateend", () => {
+          try { mediaSource.endOfStream(); } catch (e) { }
+        }, { once: true });
+      }
+
+      // === Динамічне визначення avgWordsPerSecond ===
+      const audioBlob = new Blob(audioChunks, { type: 'audio/mpeg' });
+      const tempAudio = new Audio();
+      tempAudio.src = URL.createObjectURL(audioBlob);
+      tempAudio.addEventListener("loadedmetadata", () => {
+        const durationSec = tempAudio.duration;
+        const avgWordsPerSecond = totalWords > 0 ? totalWords / durationSec : 1.6;
+
+        console.log(`📊 Динамічний avgWordsPerSecond: ${avgWordsPerSecond.toFixed(2)} (тривалість: ${durationSec.toFixed(2)}s, слова: ${totalWords})`);
+
+        if (gestures.length > 0 && totalWords > 0) {
+          gestures.forEach(g => {
+            const timeMs = (g.wordPos / avgWordsPerSecond) * 1000;
+            console.log(`⏰ Gesture "${g.type}" (dynamic) через ${(timeMs / 1000).toFixed(2)} сек`);
+            setTimeout(() => {
+              if (g.type === 'attention') {
+                import('../gestures/gestureAttentionWithFinger.js')
+                  .then(m => m.gestureAttentionWithFinger(avatar));
+              }
+              if (g.type === 'explain') {
+                import('../gestures/gestureExplainWithHand.js')
+                  .then(m => m.gestureExplainWithHand(avatar));
+              }
+            }, timeMs);
+          });
+        }
+      });
     });
 
-    // Очищення ресурсу при завершенні відтворення
     audio.addEventListener("ended", () => {
       console.log("[TTS-STREAM] ⏹️ завершено");
-
       audio.src = "";
       URL.revokeObjectURL(activeAudioURL);
       activeAudioURL = null;
-      // ВАЖЛИВО: додатково пробуємо очистити SourceBuffer
       if (mediaSource.readyState === "open" && sb && !sb.updating) {
-        try {
-          mediaSource.removeSourceBuffer(sb);
-        } catch (e) {
-          // Може бути вже очищено — не страшно
-        }
+        try { mediaSource.removeSourceBuffer(sb); } catch (e) {}
       }
       resolve();
     });
