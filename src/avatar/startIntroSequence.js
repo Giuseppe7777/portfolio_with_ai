@@ -80,6 +80,24 @@ export async function startIntroSequence(container) {
     waitFrames();
   });
 
+  // ============================================================================
+  
+  // 🔁 Скидаємо позицію аватара у початкову (далеко й низько)
+  avatar.position.set(0, -3, -10);
+  avatar.rotation.set(0, 0, 0); // якщо обертання не потрібне — обнуляємо
+  avatar.updateMatrixWorld(true);
+  
+  // 💡 Скидаємо action, щоб стартував з самого початку
+  if (mixer && mixer._actions && mixer._actions[0]) {
+    const action = mixer._actions[0];
+    action.reset();       // відкат у початок
+    action.paused = false;
+    action.time = 0;      // буквально перший кадр
+    action.play();
+  }
+  
+  // ============================================================================
+  
   console.log('🎬 Стартує playIntroAnimation з позицією:', avatar.position);
   playIntroAnimation(mixer, avatar, faceMesh);
   setCurrentMixer(mixer);

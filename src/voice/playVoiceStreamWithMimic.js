@@ -202,7 +202,7 @@ export async function playVoiceStreamWithMimic(text, faceMesh, avatar, gestures 
               if (g.type === 'attention') {
                 import('../gestures/gestureAttentionWithFinger.js')
                   .then(m => m.gestureAttentionWithFinger(avatar));
-              }
+              } 
               if (g.type === 'explain') {
                 import('../gestures/gestureExplainWithHand.js')
                   .then(m => m.gestureExplainWithHand(avatar));
