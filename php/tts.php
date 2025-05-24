@@ -36,7 +36,7 @@ if ($text === '' || !$voiceId || !$apiKey) {
 $url  = "https://api.elevenlabs.io/v1/text-to-speech/$voiceId/stream";
 $post = json_encode([
     'text'          => $text,
-    'model_id'      => 'eleven_flash_v2_5',            // <-- low-latency модель
+    'model_id'      => 'eleven_flash_v2_5',            
     'output_format' => 'mp3_44100_128',
     'voice_settings'=> ['stability'=>0.4,'similarity_boost'=>0.8]
 ]);
