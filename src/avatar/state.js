@@ -78,3 +78,38 @@ export function setAudioContext(ctx) {
 export function getAudioContext() {
   return currentAudioContext;
 }
+
+export let questionCount = 0;
+
+export function setQuestionCount(val) {
+  questionCount = val;
+  console.log('[questionCount] set:', questionCount); // Логування
+}
+
+export function incQuestionCount() {
+  questionCount++;
+  console.log('[questionCount] incremented:', questionCount); // Логування
+}
+
+export function getQuestionCount() {
+  return questionCount;
+}
+
+export function getQuestionCountLS() {
+  return parseInt(localStorage.getItem('avatarQuestionCount') || '0', 10);
+}
+
+export function setQuestionCountLS(val) {
+  localStorage.setItem('avatarQuestionCount', val);
+  questionCount = val; // Щоб state був синхронізований
+  console.log('[questionCount] set in LS:', val);
+}
+
+export function getLastSessionLS() {
+  return parseInt(localStorage.getItem('lastAvatarSession') || '0', 10);
+}
+
+export function setLastSessionLS(ts) {
+  localStorage.setItem('lastAvatarSession', ts);
+  console.log('[lastAvatarSession] set in LS:', ts);
+}

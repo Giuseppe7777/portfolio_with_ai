@@ -16,12 +16,21 @@ import {
   setScene,
   getRenderer,
   setRenderer,
-  getAudioContext 
+  getAudioContext,
+  setQuestionCount,
+  getQuestionCountLS,
+  setQuestionCountLS,
+  getLastSessionLS
 } from './state.js';
 
 const button = document.getElementById('talk-button');
 const container = document.getElementById('avatar-container');
 const photo = document.getElementById('avatar-photo');
+
+function is24HoursPassed(lastTimestamp) {
+  const MS_IN_DAY = 24 * 60 * 60 * 1000;
+  return (Date.now() - lastTimestamp) >= MS_IN_DAY;
+}
 
 preloadAvatarModel().then((data) => {
   window.preloadedAvatarData = data;
@@ -40,10 +49,37 @@ if (button && container && photo) {
 
     // ▶️ Запуск
     if (!isActive) {
+
+      const questionCountLS = getQuestionCountLS();
+      const lastSession = getLastSessionLS();
+
+      console.log('[AVATAR ENTRY] questionCountLS:', questionCountLS, 'lastSession:', lastSession);
+
+      if (
+        questionCountLS >= 3 &&
+        lastSession > 0 &&
+        !is24HoursPassed(lastSession)
+      ) {
+        console.log('[AVATAR ENTRY] Ліміт запитань не минув, блокую запуск!');
+        // TODO: Озвучити спецфразу через TTS — на цьому кроці просто alert:
+        alert('Ліміт запитань на сьогодні вичерпано. Будь ласка, спробуйте завтра.');
+        return; // Не запускаємо сцену!
+      }
+
+      // Якщо ліміт був, але вже минуло 24 години — скидаємо лічильник
+      if (questionCountLS >= 3 && is24HoursPassed(lastSession)) {
+        setQuestionCountLS(0);
+        setQuestionCount(0);
+        console.log('[AVATAR ENTRY] Минуло 24 години, скидаємо лічильник.');
+      }
+
       isLaunching = true;
       setConversationActive(true);
       photo.classList.add('loading');
       button.textContent = 'Stop Talk';
+
+      setQuestionCount(0);
+      setQuestionCountLS(0);
 
       setTimeout(() => {
         startIntroSequence(container);
@@ -157,3 +193,4 @@ export function stopConversation() {
     ctx.close();
   }
 }
+

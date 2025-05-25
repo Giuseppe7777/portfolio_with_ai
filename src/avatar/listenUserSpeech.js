@@ -1,5 +1,10 @@
-import { setMicStream, getConversationActive } from './state.js';
 import { playVoiceStreamWithMimic } from "../voice/playVoiceStreamWithMimic.js";
+import { 
+  setMicStream, 
+  getConversationActive, 
+  incQuestionCount, 
+  getQuestionCount 
+} from './state.js';
 
 /**
  * Показує кнопку для дозволу на мікрофон і починає слухати, якщо користувач погодився
@@ -320,6 +325,9 @@ async function handleFirstUserText(text) {
     }
   } else {
     isFinalSilence = false;
+
+    incQuestionCount();
+    console.log('[questionCount] after inc in handleFirstUserText:', getQuestionCount());
   }
 
   if (!getConversationActive()) {
