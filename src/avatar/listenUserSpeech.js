@@ -3,7 +3,10 @@ import {
   setMicStream, 
   getConversationActive, 
   incQuestionCount, 
-  getQuestionCount 
+  getQuestionCount,
+  setLastSessionLS, 
+  setQuestionCountLS, 
+  getQuestionCountLS 
 } from './state.js';
 
 /**
@@ -245,7 +248,7 @@ mediaRecorder.onstop = () => {
   console.log('⏺️ Запис запущено');
 }
 
-async function sendToGPT(text) {
+export async function sendToGPT(text) {
 const systemPrompt = `
 You are a multilingual assistant.
 If the user is clearly saying goodbye in any language (e.g. “goodbye”, “see you”, “bye”, “до побачення”, “tschüss”, “auf wiedersehen”, etc.),
@@ -327,7 +330,26 @@ async function handleFirstUserText(text) {
     isFinalSilence = false;
 
     incQuestionCount();
+    setQuestionCountLS(getQuestionCount());
     console.log('[questionCount] after inc in handleFirstUserText:', getQuestionCount());
+  }
+
+  const LIM = 6; // Або 10 для продакшена
+  const qCount = getQuestionCountLS();
+
+  // Якщо досягли ліміту — формуємо спецprompt і завершуємо
+  if (qCount >= LIM) {
+    setLastSessionLS(Date.now());
+    setQuestionCountLS(LIM); // Фіксуємо значення в LS на випадок форсмажорів
+
+    // Дружній prompt, як у мовчанці — GPT все зробить сам!
+    text = `${lastRealUserText}
+    
+    Please detect the language of the user's message above. Do not say what language it is. Just use that language — and only that language — to politely inform the user that they have reached the question limit for today. Tell them they can talk again in 24 hours, thank them for the conversation, and wish them all the best in a warm, friendly manner. 
+    **Do NOT add any gesture markers or tags in your response, even if you normally would.**
+    `;
+
+    console.log('💡 Ліміт досягнуто — надсилаємо спецprompt до GPT:', text);
   }
 
   if (!getConversationActive()) {
@@ -363,6 +385,12 @@ async function handleFirstUserText(text) {
     await playVoiceStreamWithMimic(plainText, faceMesh, avatar, gestures, totalWords);      
 
     console.log('🔁 Відповідь (stream) завершена');
+
+    if (qCount >= LIM) {
+      setTimeout(() => import('./avatar-entry.js').then(m => m.stopConversation()), 3500); // дати TTS договорити
+      return;
+    }
+
     if (isFinalSilence || farewell) {
       console.log('🔍 Перевірка умови виходу: isFinalSilence =', isFinalSilence, ', farewell =', farewell);
       console.log('👋 Завершуємо сцену після мовчанки / прощання');

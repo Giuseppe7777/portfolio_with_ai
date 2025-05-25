@@ -1,6 +1,9 @@
 // src/avatar/avatar-entry.js
 import { startIntroSequence } from './startIntroSequence.js';
 import { preloadAvatarModel } from './preloadAvatarModel.js';
+import { playVoiceStreamWithMimic } from "../voice/playVoiceStreamWithMimic.js";
+import { sendToGPT } from "./listenUserSpeech.js";
+import { playLimitMessageWithAvatar } from "./playLimitMessageWithAvatar.js";
 import {
   setConversationActive,
   getConversationActive,
@@ -56,18 +59,28 @@ if (button && container && photo) {
       console.log('[AVATAR ENTRY] questionCountLS:', questionCountLS, 'lastSession:', lastSession);
 
       if (
-        questionCountLS >= 3 &&
+        questionCountLS >= 6 &&
         lastSession > 0 &&
         !is24HoursPassed(lastSession)
       ) {
         console.log('[AVATAR ENTRY] Ліміт запитань не минув, блокую запуск!');
-        // TODO: Озвучити спецфразу через TTS — на цьому кроці просто alert:
-        alert('Ліміт запитань на сьогодні вичерпано. Будь ласка, спробуйте завтра.');
-        return; // Не запускаємо сцену!
+        (async () => {
+          const lastLangPrompt = `
+            Please detect the language of the user in previous conversations.
+            Just use that language — and only that language — to politely say that the question limit for today is reached, and the user can try again in 24 hours. Thank them warmly for the conversation.
+            Be brief but friendly.
+          `;
+          const { answer } = await sendToGPT(lastLangPrompt);
+
+          // WOW-ефект — аватар озвучує блокування
+          await playLimitMessageWithAvatar(answer);
+        })();
+        return;
+
       }
 
       // Якщо ліміт був, але вже минуло 24 години — скидаємо лічильник
-      if (questionCountLS >= 3 && is24HoursPassed(lastSession)) {
+      if (questionCountLS >= 6 && is24HoursPassed(lastSession)) {
         setQuestionCountLS(0);
         setQuestionCount(0);
         console.log('[AVATAR ENTRY] Минуло 24 години, скидаємо лічильник.');
@@ -112,6 +125,7 @@ export function stopConversation() {
   if (canvas) canvas.remove();
 
   // 📷 Повернути фото
+  console.log('[STOP] Повертаємо фото — remove fade-out');
   photo.classList.remove('fade-out');
   photo.classList.remove('loading');
   container.classList.remove('fade-in');

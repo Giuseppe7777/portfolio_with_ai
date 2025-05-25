@@ -17,10 +17,12 @@ import {
  * Стартова функція, яка:
  * - створює сцену
  * - завантажує аватара
- * - запускає анімацію вітання 
+ * - запускає анімацію вітання (WalkAndWave), після якої може бути кастомний меседж
  * @param {HTMLElement} container - DOM-елемент, куди вставляється canvas
+ * @param {Object} options - { skipSpeech: true } або { limitMessageText, onAfterAnimation }
+ * @returns {Object} - { avatar, faceMesh, mixer }
  */
-export async function startIntroSequence(container) {
+export async function startIntroSequence(container, options = {}) {
   if (!getConversationActive()) {
     console.log('🛑 Запуск скасовано: розмова була зупинена до старту сцени.');
     return;
@@ -81,26 +83,72 @@ export async function startIntroSequence(container) {
   });
 
   // ============================================================================
-  
-  // 🔁 Скидаємо позицію аватара у початкову (далеко й низько)
+
+  // 🔁 Скидаємо позицію аватара у початкову (idle)
   avatar.position.set(0, -3, -10);
-  avatar.rotation.set(0, 0, 0); // якщо обертання не потрібне — обнуляємо
+  avatar.rotation.set(0, 0, 0);
   avatar.updateMatrixWorld(true);
-  
+
   // 💡 Скидаємо action, щоб стартував з самого початку
   if (mixer && mixer._actions && mixer._actions[0]) {
     const action = mixer._actions[0];
-    action.reset();       // відкат у початок
+    action.reset();
     action.paused = false;
-    action.time = 0;      // буквально перший кадр
+    action.time = 0;
     action.play();
   }
-  
-  // ============================================================================
-  
+
+  setCurrentMixer(mixer);
+
+  // ===== WOW-режим: Після WalkAndWave — твій кастомний меседж ==================
+  if (options.limitMessageText) {
+    // WalkAndWave як завжди
+    playIntroAnimation(mixer, avatar, faceMesh);
+
+    let hasFinished = false;
+
+    const handleFinish = () => {
+      if (hasFinished) return;
+      hasFinished = true;
+
+      // Після WalkAndWave — твій кастомний меседж
+      if (typeof options.onAfterAnimation === 'function') {
+        options.onAfterAnimation({ avatar, faceMesh, mixer });
+      }
+    };
+
+    const timerId = setTimeout(() => {
+      mixer.dispatchEvent({ type: 'finished' });
+    }, 4600);
+    setFinishTimerId(timerId);
+
+    mixer.addEventListener('finished', handleFinish);
+
+    let animationFrameId;
+    function renderLoop() {
+      animationFrameId = requestAnimationFrame(renderLoop);
+      renderer.render(scene, camera);
+      controls.update();
+    }
+
+    renderLoop();
+    setRenderLoopId(animationFrameId);
+
+    startBlinking(faceMesh);
+
+    // Повертаємо модель
+    return { avatar, faceMesh, mixer };
+  }
+
+  // ===== Idle-режим без WalkAndWave/інтро-спіча =====================
+  if (options.skipSpeech) {
+    startBlinking(faceMesh);
+    return { avatar, faceMesh, mixer };
+  }
+
+  // ===== Стандартна поведінка (WalkAndWave + інтро) ================
   console.log('🎬 Стартує playIntroAnimation з позицією:', avatar.position);
   playIntroAnimation(mixer, avatar, faceMesh);
-  setCurrentMixer(mixer);
 
   let hasFinished = false;
 
@@ -133,4 +181,6 @@ export async function startIntroSequence(container) {
   setRenderLoopId(animationFrameId);
 
   startBlinking(faceMesh);
+
+  return { avatar, faceMesh, mixer };
 }
