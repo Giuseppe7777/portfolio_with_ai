@@ -334,7 +334,7 @@ async function handleFirstUserText(text) {
     console.log('[questionCount] after inc in handleFirstUserText:', getQuestionCount());
   }
 
-  const LIM = 6; // Або 10 для продакшена
+  const LIM = 5; // Або 10 для продакшена
   const qCount = getQuestionCountLS();
 
   // Якщо досягли ліміту — формуємо спецprompt і завершуємо
