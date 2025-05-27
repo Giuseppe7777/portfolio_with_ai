@@ -342,7 +342,7 @@ async function handleFirstUserText(text) {
   } else {
     isFinalSilence = false;
     // --- Для звичайних питань: додаємо фразу якщо залишилось 2 питання ---
-    if (limitInfo.left === 2) {
+    if (limitInfo.left === 3) {
       text += `
         Please, at the end of your answer, gently inform the user (using the same language as their question) that they have only two questions left for today.
       `;

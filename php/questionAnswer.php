@@ -154,3 +154,6 @@ echo json_encode([
     'left' => max(0, MAX_QUESTIONS - $limits[$ip]['count']),
     'total' => MAX_QUESTIONS
 ]);
+
+
+
