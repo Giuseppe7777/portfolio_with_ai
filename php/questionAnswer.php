@@ -12,7 +12,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // === ЛІМІТИ ПО IP ===
 
 define('LIMIT_FILE', __DIR__ . '/limits.json');
-define('MAX_QUESTIONS', 3);
+define('MAX_QUESTIONS', 4);
 define('PERIOD_SECONDS', 24 * 60 * 60);
 
 $ip = $_SERVER['REMOTE_ADDR'];

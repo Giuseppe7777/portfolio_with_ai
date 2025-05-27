@@ -4,7 +4,7 @@
 header('Content-Type: application/json');
 
 define('LIMIT_FILE', __DIR__ . '/limits.json');
-define('MAX_QUESTIONS', 3);           // Кількість питань на добу
+define('MAX_QUESTIONS', 4);           // Кількість питань на добу
 define('PERIOD_SECONDS', 24 * 60 * 60); // 24 години
 
 // 1. Отримати IP користувача

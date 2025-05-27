@@ -336,7 +336,7 @@ async function handleFirstUserText(text) {
         : 'Please say something. I didn’t hear any question.';
     } else {
       text = isFinalSilence
-        ? `${lastRealUserText} This is just a helper text to detect the language. Do not repeat or react to it. Do not mention which language it is. Simply say, in that detected language only, that you are thankful for the conversation, you wish the user all the best, and hope to see them next time.`
+        ? `${lastRealUserText} Please detect the language of the user's message above. Do not say what language it is. Just use that language — and only that language — to say that you are thankful for the conversation, you wish the user all the best, and hope to see them next time.`
         : `${lastRealUserText}\n\nPlease detect the language of the user's message above. Do not say what language it is. Just use that language — and only that language — to say that you didn't hear any question and politely ask the user to say something or ask a question.`;
     }
   } else {
