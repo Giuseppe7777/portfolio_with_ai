@@ -4,6 +4,11 @@ header("Access-Control-Allow-Headers: *");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Content-Type: application/json");
 
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(204); // No Content
+    exit;
+}
+
 // Підключаємо .env з ключем OPENAI_KEY
 $envPath = dirname(__DIR__) . '/.env';
 if (file_exists($envPath)) {
