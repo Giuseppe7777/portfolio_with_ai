@@ -9,6 +9,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
+// === ЛІМІТИ ПО IP ===
+
+define('LIMIT_FILE', __DIR__ . '/limits.json');
+define('MAX_QUESTIONS', 3);
+define('PERIOD_SECONDS', 24 * 60 * 60);
+
+$ip = $_SERVER['REMOTE_ADDR'];
+
+$limits = [];
+if (file_exists(LIMIT_FILE)) {
+    $json = file_get_contents(LIMIT_FILE);
+    $limits = json_decode($json, true) ?: [];
+}
+
+$now = time();
+
+if (!isset($limits[$ip])) {
+    $limits[$ip] = [
+        'count' => 0,
+        'first_time' => $now
+    ];
+}
+
+// Якщо пройшло більше доби — скидаємо лічильник
+if ($now - $limits[$ip]['first_time'] > PERIOD_SECONDS) {
+    $limits[$ip]['count'] = 0;
+    $limits[$ip]['first_time'] = $now;
+}
+
+// Якщо ліміт досягнутий — повертаємо статус і не питаємо GPT
+if ($limits[$ip]['count'] >= MAX_QUESTIONS) {
+    echo json_encode([
+        'status' => 'limit',
+        'left' => 0,
+        'total' => MAX_QUESTIONS,
+        'answer' => 'Sorry, you have reached the question limit for today. Please try again in 24 hours.'
+    ]);
+    exit;
+}
+
+// Якщо тут — питання дозволене, ІНКРЕМЕНТУЄМО лічильник!
+$limits[$ip]['count']++;
+
+// Зберігаємо limits.json
+file_put_contents(LIMIT_FILE, json_encode($limits, JSON_PRETTY_PRINT));
+
+
 // Підключаємо .env з ключем OPENAI_KEY
 $envPath = dirname(__DIR__) . '/.env';
 if (file_exists($envPath)) {
@@ -103,5 +150,7 @@ if (!$answer) {
 
 echo json_encode([
     'status' => 'success',
-    'answer' => $answer
+    'answer' => $answer,
+    'left' => max(0, MAX_QUESTIONS - $limits[$ip]['count']),
+    'total' => MAX_QUESTIONS
 ]);

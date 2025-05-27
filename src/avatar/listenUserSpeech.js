@@ -300,7 +300,7 @@ Insert the marker as a separate word, directly before the relevant phrase.
 
     const cleanAnswer = raw.replace('##END##', '').trim();
 
-    return { answer: cleanAnswer, farewell: isFarewell };
+    return { answer: cleanAnswer, farewell: isFarewell, status: data.status, left: data.left };
 
   } catch (err) {
     console.error('❌ GPT fetch помилка:', err);
@@ -314,6 +314,7 @@ async function handleFirstUserText(text) {
   // 1. Перевіряємо ліміт на бекенді!
   const limitInfo = await checkLimitOnBackend();
   if (limitInfo.status === 'limit') {
+    // Якщо ліміт вже досягнутий перед питанням (наприклад, після reload)
     const prompt = `
       Please detect the language of the user in previous conversations.
       Just use that language — and only that language — to politely say that the question limit for today is reached, and the user can try again in 24 hours. Thank them warmly for the conversation.
@@ -325,7 +326,7 @@ async function handleFirstUserText(text) {
     return;
   }
 
-  // 2. Обробка мовчанки
+  // 2. Обробка мовчанки (не змінюємо цю частину)
   if (text === '__SILENCE__1' || text === '__SILENCE__2') {
     isFinalSilence = (text === '__SILENCE__2');
 
@@ -346,14 +347,29 @@ async function handleFirstUserText(text) {
         Please, at the end of your answer, gently inform the user (using the same language as their question) that they have only two questions left for today.
       `;
     }
+    // --- Для останнього питання (left === 1) ---
+    if (limitInfo.left === 1) {
+      text += `
+        Please, at the end of your answer, gently inform the user (using the same language as their question) that this was their last question for today, thank them warmly for the conversation, and wish them a great day until next time.
+      `;
+    }
   }
 
   // 3. Валідація і відправка
   if (!getConversationActive()) return;
   if (!text || text.trim() === '' || text === 'undefined') return;
 
-  // 🧠 Використовуємо sendToGPT — тепер text завжди вже готовий і з попередженням!
-  const { answer: cleanAnswer, farewell } = await sendToGPT(text);
+  // === ОТУТ ГОЛОВНА ЛОГІКА! ===
+  const gptResult = await sendToGPT(text);
+
+  // 3.1. Якщо status === 'limit', WOW-режим одразу (це коли питання прилетіло на перевищений ліміт)
+  if (gptResult.status === 'limit') {
+    (await import('./playLimitMessageWithAvatar.js')).playLimitMessageWithAvatar(gptResult.answer);
+    setTimeout(() => import('./avatar-entry.js').then(m => m.stopConversation()), 3500);
+    return;
+  }
+  // --- Далі твоя стандартна логіка ---
+  const { answer: cleanAnswer, farewell, left } = gptResult;
   if (!cleanAnswer) return;
 
   const { plainText, gestures, totalWords } = parseTextWithGestures(cleanAnswer);
@@ -363,7 +379,12 @@ async function handleFirstUserText(text) {
   try {
     await playVoiceStreamWithMimic(plainText, faceMesh, avatar, gestures, totalWords);
 
-    console.log('🔁 Відповідь (stream) завершена');
+    // Якщо це останнє питання (left === 0 після відповіді), закриваємо розмову
+    if (typeof left === 'number' && left === 0) {
+      console.log('👋 Досягнутий ліміт: це була остання відповідь. Закриваємо розмову.');
+      setTimeout(() => import('./avatar-entry.js').then(m => m.stopConversation()), 3500);
+      return;
+    }
 
     if (isFinalSilence || farewell) {
       console.log('🔍 Перевірка умови виходу: isFinalSilence =', isFinalSilence, ', farewell =', farewell);
@@ -385,5 +406,7 @@ async function handleFirstUserText(text) {
     alert('Не вдалося озвучити відповідь (stream).');
   }
 }
+
+
 
 
