@@ -1,12 +1,7 @@
 import { playVoiceStreamWithMimic } from "../voice/playVoiceStreamWithMimic.js";
 import { 
   setMicStream, 
-  getConversationActive, 
-  incQuestionCount, 
-  getQuestionCount,
-  setLastSessionLS, 
-  setQuestionCountLS, 
-  getQuestionCountLS 
+  getConversationActive
 } from './state.js';
 
 /**
@@ -101,6 +96,17 @@ export function promptMicrophoneAccess() {
       alert('Мікрофон не активовано. Я не зможу тебе почути 😢');
     }
   });
+}
+
+async function checkLimitOnBackend() {
+  // !!! Замінити URL на свій PHP-ендпоінт !!!
+  const resp = await fetch('/php/checkLimit.php', { method: 'GET' });
+  if (!resp.ok) return { status: 'error' };
+  try {
+    return await resp.json(); // {status: 'ok'|'limit', message: '...'}
+  } catch {
+    return { status: 'error' };
+  }
 }
 
 let isFinalSilence = false;
@@ -305,91 +311,59 @@ Insert the marker as a separate word, directly before the relevant phrase.
 
 
 async function handleFirstUserText(text) {
-  if (text === '__SILENCE__1') {
-    isFinalSilence = false;
+  // 1. Перевіряємо ліміт на бекенді!
+  const limitInfo = await checkLimitOnBackend();
+  if (limitInfo.status === 'limit') {
+    const prompt = `
+      Please detect the language of the user in previous conversations.
+      Just use that language — and only that language — to politely say that the question limit for today is reached, and the user can try again in 24 hours. Thank them warmly for the conversation.
+      Be brief but friendly.
+    `;
+    const { answer } = await sendToGPT(prompt);
+    (await import('./playLimitMessageWithAvatar.js')).playLimitMessageWithAvatar(answer);
+    setTimeout(() => import('./avatar-entry.js').then(m => m.stopConversation()), 3500);
+    return;
+  }
+
+  // 2. Обробка мовчанки
+  if (text === '__SILENCE__1' || text === '__SILENCE__2') {
+    isFinalSilence = (text === '__SILENCE__2');
 
     if (!lastRealUserText || lastRealUserText.trim() === '') {
-      console.log('📡 GPT: інтро-спіч → перша мовчанка. Відповідь англійською.');
-      text = 'Please say something. I didn’t hear any question.';
+      text = isFinalSilence
+        ? 'Thanks for the talk. Hope to see you again next time!'
+        : 'Please say something. I didn’t hear any question.';
     } else {
-      console.log('📡 GPT: це перша мовчанка після розмови. Формуємо прохання повторити.');
-      text = `${lastRealUserText}\n\nPlease detect the language of the user's message above. Do not say what language it is. Just use that language — and only that language — to say that you didn't hear any question and politely ask the user to say something or ask a question.`;
-    }
-
-  } else if (text === '__SILENCE__2') {
-    isFinalSilence = true;
-
-    if (!lastRealUserText || lastRealUserText.trim() === '') {
-      console.log('📡 GPT: інтро-спіч → друга мовчанка. Відповідь англійською.');
-      text = 'Thanks for the talk. Hope to see you again next time!';
-    } else {
-      console.log('📡 GPT: це друга мовчанка після розмови. Формуємо прощальну фразу.');
-      text = `${lastRealUserText} This is just a helper text to detect the language. Do not repeat or react to it. Do not mention which language it is. Simply say, in that detected language only, that you are thankful for the conversation, you wish the user all the best, and hope to see them next time.`;
+      text = isFinalSilence
+        ? `${lastRealUserText} This is just a helper text to detect the language. Do not repeat or react to it. Do not mention which language it is. Simply say, in that detected language only, that you are thankful for the conversation, you wish the user all the best, and hope to see them next time.`
+        : `${lastRealUserText}\n\nPlease detect the language of the user's message above. Do not say what language it is. Just use that language — and only that language — to say that you didn't hear any question and politely ask the user to say something or ask a question.`;
     }
   } else {
     isFinalSilence = false;
-
-    incQuestionCount();
-    setQuestionCountLS(getQuestionCount());
-    console.log('[questionCount] after inc in handleFirstUserText:', getQuestionCount());
+    // --- Для звичайних питань: додаємо фразу якщо залишилось 2 питання ---
+    if (limitInfo.left === 2) {
+      text += `
+        Please, at the end of your answer, gently inform the user (using the same language as their question) that they have only two questions left for today.
+      `;
+    }
   }
 
-  const LIM = 2; // Або 10 для продакшена
-  const qCount = getQuestionCountLS();
+  // 3. Валідація і відправка
+  if (!getConversationActive()) return;
+  if (!text || text.trim() === '' || text === 'undefined') return;
 
-  // Якщо досягли ліміту — формуємо спецprompt і завершуємо
-  if (qCount >= LIM) {
-    setLastSessionLS(Date.now());
-    setQuestionCountLS(LIM); // Фіксуємо значення в LS на випадок форсмажорів
-
-    // Дружній prompt, як у мовчанці — GPT все зробить сам!
-    text = `${lastRealUserText}
-    
-    Please detect the language of the user's message above. Do not say what language it is. Just use that language — and only that language — to politely inform the user that they have reached the question limit for today. Tell them they can talk again in 24 hours, thank them for the conversation, and wish them all the best in a warm, friendly manner. 
-    **Do NOT add any gesture markers or tags in your response, even if you normally would.**
-    `;
-
-    console.log('💡 Ліміт досягнуто — надсилаємо спецprompt до GPT:', text);
-  }
-
-  if (!getConversationActive()) {
-    console.warn('🛑 Розмова була зупинена до GPT-запиту — не звертаємося до GPT.');
-    return;
-  }
-
-  console.log('🤖 Готуємо запит до GPT з текстом користувача:', text);
-
-  if (!text || text.trim() === '' || text === 'undefined') {
-    console.warn('⚠️ Текст пустий або невизначений. Не звертаємося до GPT.');
-    return;
-  }
-
-  // 🧠 Використовуємо sendToGPT — ЄДИНЕ джерело
+  // 🧠 Використовуємо sendToGPT — тепер text завжди вже готовий і з попередженням!
   const { answer: cleanAnswer, farewell } = await sendToGPT(text);
   if (!cleanAnswer) return;
 
   const { plainText, gestures, totalWords } = parseTextWithGestures(cleanAnswer);
-
-  console.log('---------------------------');
-  console.log('🪄 Оригінал із gesture:', cleanAnswer);
-  console.log('📝 Розпарсений текст (без тегів):', plainText);
-  console.log('🎬 Масив gesture для TTS:', gestures, 'Всього слів:', totalWords);
-  console.log('---------------------------');
-    
-  // Шукаємо всі gesture-теги
   const gestureTags = [...cleanAnswer.matchAll(/\[gesture:([^\]]+)\]/g)].map(m => m[1]);
   console.log('🎯 gesture-теги у відповіді:', gestureTags);
 
-  /* ---------- STREAM-TTS ---------- */  
   try {
-    await playVoiceStreamWithMimic(plainText, faceMesh, avatar, gestures, totalWords);      
+    await playVoiceStreamWithMimic(plainText, faceMesh, avatar, gestures, totalWords);
 
     console.log('🔁 Відповідь (stream) завершена');
-
-    if (qCount >= LIM) {
-      setTimeout(() => import('./avatar-entry.js').then(m => m.stopConversation()), 3500); // дати TTS договорити
-      return;
-    }
 
     if (isFinalSilence || farewell) {
       console.log('🔍 Перевірка умови виходу: isFinalSilence =', isFinalSilence, ', farewell =', farewell);
@@ -401,8 +375,7 @@ async function handleFirstUserText(text) {
       console.warn('🛑 Розмова зупинена — не слухаємо далі');
       return;
     }
-    if (!micStream || micStream.getTracks()
-        .some(t => t.readyState === 'ended')) {
+    if (!micStream || micStream.getTracks().some(t => t.readyState === 'ended')) {
       console.warn('🎤 Мікрофон вимкнено.');
       return;
     }
@@ -410,6 +383,7 @@ async function handleFirstUserText(text) {
   } catch (err) {
     console.error('❌ STREAM-TTS помилка:', err);
     alert('Не вдалося озвучити відповідь (stream).');
-  };
+  }
 }
+
 

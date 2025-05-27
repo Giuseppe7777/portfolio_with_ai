@@ -20,20 +20,14 @@ import {
   getRenderer,
   setRenderer,
   getAudioContext,
-  setQuestionCount,
-  getQuestionCountLS,
-  setQuestionCountLS,
-  getLastSessionLS
+  setQuestionCount
 } from './state.js';
 
 const button = document.getElementById('talk-button');
 const container = document.getElementById('avatar-container');
 const photo = document.getElementById('avatar-photo');
 
-function is24HoursPassed(lastTimestamp) {
-  const MS_IN_DAY = 24 * 60 * 60 * 1000;
-  return (Date.now() - lastTimestamp) >= MS_IN_DAY;
-}
+// --- Видалено функцію is24HoursPassed та всю LocalStorage-логіку ---
 
 preloadAvatarModel().then((data) => {
   window.preloadedAvatarData = data;
@@ -43,8 +37,20 @@ preloadAvatarModel().then((data) => {
 // 🔁 Локальний захист запуску
 let isLaunching = false;
 
+// --- Додаємо нову функцію для серверної перевірки ---
+async function checkLimitOnBackend() {
+  // !!! Замінити URL на свій PHP-ендпоінт !!!
+  const resp = await fetch('/php/checkLimit.php', { method: 'GET' });
+  if (!resp.ok) return { status: 'error' };
+  try {
+    return await resp.json(); // {status: 'ok'|'limit', message: '...'}
+  } catch {
+    return { status: 'error' };
+  }
+}
+
 if (button && container && photo) {
-  button.addEventListener('click', () => {
+  button.addEventListener('click', async () => {
     const isActive = getConversationActive();
 
     // ⛔ Не дозволяємо запускати сцену повторно, поки вона ще створюється
@@ -52,47 +58,33 @@ if (button && container && photo) {
 
     // ▶️ Запуск
     if (!isActive) {
+      // --- Ось тут перевіряємо сервер ---
+      const limitInfo = await checkLimitOnBackend();
 
-      const questionCountLS = getQuestionCountLS();
-      const lastSession = getLastSessionLS();
+      if (limitInfo.status === 'limit') {
+        console.log('[AVATAR ENTRY] Сервер повернув ліміт, блокую запуск!');
+        // Відправляємо службовий prompt на GPT, або беремо готовий message із сервера
+        const lastLangPrompt = `
+          Please detect the language of the user in previous conversations.
+          Just use that language — and only that language — to politely say that the question limit for today is reached, and the user can try again in 24 hours. Thank them warmly for the conversation.
+          Be brief but friendly.
+        `;
 
-      console.log('[AVATAR ENTRY] questionCountLS:', questionCountLS, 'lastSession:', lastSession);
+        // Якщо сервер повертає вже готовий message — використовуй його:
+        const answer = limitInfo.message || (await sendToGPT(lastLangPrompt)).answer;
 
-      if (
-        questionCountLS >= 2 &&
-        lastSession > 0 &&
-        !is24HoursPassed(lastSession)
-      ) {
-        console.log('[AVATAR ENTRY] Ліміт запитань не минув, блокую запуск!');
-        (async () => {
-          const lastLangPrompt = `
-            Please detect the language of the user in previous conversations.
-            Just use that language — and only that language — to politely say that the question limit for today is reached, and the user can try again in 24 hours. Thank them warmly for the conversation.
-            Be brief but friendly.
-          `;
-          const { answer } = await sendToGPT(lastLangPrompt);
-
-          // WOW-ефект — аватар озвучує блокування
-          await playLimitMessageWithAvatar(answer);
-        })();
+        // WOW-ефект — аватар озвучує блокування
+        await playLimitMessageWithAvatar(answer);
         return;
-
       }
 
-      // Якщо ліміт був, але вже минуло 24 години — скидаємо лічильник
-      if (questionCountLS >= 2 && is24HoursPassed(lastSession)) {
-        setQuestionCountLS(0);
-        setQuestionCount(0);
-        console.log('[AVATAR ENTRY] Минуло 24 години, скидаємо лічильник.');
-      }
-
+      // --- Якщо ліміт не досягнуто, запускаємо стандартний сценарій ---
       isLaunching = true;
       setConversationActive(true);
       photo.classList.add('loading');
       button.textContent = 'Stop Talk';
 
       setQuestionCount(0);
-      setQuestionCountLS(0);
 
       setTimeout(() => {
         startIntroSequence(container);
@@ -207,4 +199,3 @@ export function stopConversation() {
     ctx.close();
   }
 }
-
