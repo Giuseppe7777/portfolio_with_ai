@@ -59,7 +59,7 @@ if (button && container && photo) {
       console.log('[AVATAR ENTRY] questionCountLS:', questionCountLS, 'lastSession:', lastSession);
 
       if (
-        questionCountLS >= 5 &&
+        questionCountLS >= 2 &&
         lastSession > 0 &&
         !is24HoursPassed(lastSession)
       ) {
@@ -80,7 +80,7 @@ if (button && container && photo) {
       }
 
       // Якщо ліміт був, але вже минуло 24 години — скидаємо лічильник
-      if (questionCountLS >= 5 && is24HoursPassed(lastSession)) {
+      if (questionCountLS >= 2 && is24HoursPassed(lastSession)) {
         setQuestionCountLS(0);
         setQuestionCount(0);
         console.log('[AVATAR ENTRY] Минуло 24 години, скидаємо лічильник.');
