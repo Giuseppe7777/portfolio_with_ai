@@ -85,7 +85,6 @@ export function promptMicrophoneAccess() {
 }
 
 async function checkLimitOnBackend() {
-  // !!! Замінити URL на свій PHP-ендпоінт !!!
   const resp = await fetch('/php/checkLimit.php', { method: 'GET' });
   if (!resp.ok) return { status: 'error' };
   try {

@@ -39,7 +39,6 @@ let isLaunching = false;
 
 // --- Додаємо нову функцію для серверної перевірки ---
 async function checkLimitOnBackend() {
-  // !!! Замінити URL на свій PHP-ендпоінт !!!
   const resp = await fetch('/php/checkLimit.php', { method: 'GET' });
   if (!resp.ok) return { status: 'error' };
   try {

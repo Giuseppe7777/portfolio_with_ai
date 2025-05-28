@@ -80,4 +80,3 @@ window.startRealtimeAvatar = startRealtimeAvatar;
 
 
 
-//  startRealtimeAvatar()  
