@@ -1,11 +1,10 @@
 <?php
-// Файл: php/checkLimit.php
 
 header('Content-Type: application/json');
 
 define('LIMIT_FILE', __DIR__ . '/limits.json');
-define('MAX_QUESTIONS', 4);           // Кількість питань на добу
-define('PERIOD_SECONDS', 24 * 60 * 60); // 24 години
+define('MAX_QUESTIONS', 4);           
+define('PERIOD_SECONDS', 24 * 60 * 60); 
 
 // 1. Отримати IP користувача
 $ip = $_SERVER['REMOTE_ADDR'];
@@ -17,7 +16,6 @@ if (file_exists(LIMIT_FILE)) {
     $limits = json_decode($json, true) ?: [];
 }
 
-// 3. Поточний час
 $now = time();
 
 // 4. Ініціалізувати для нового IP

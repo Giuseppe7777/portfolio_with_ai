@@ -1,4 +1,4 @@
-// src/avatar/playLimitMessageWithAvatar.js
+
 import { startIntroSequence } from './startIntroSequence.js';
 import { playVoiceStreamWithMimic } from '../voice/playVoiceStreamWithMimic.js';
 import { stopConversation } from './avatar-entry.js';

@@ -39,7 +39,7 @@ let isLaunching = false;
 
 // --- Додаємо нову функцію для серверної перевірки ---
 async function checkLimitOnBackend() {
-  const resp = await fetch('/php/checkLimit.php', { method: 'GET' });
+  const resp = await fetch(`${BASE_URL}/php/checkLimit.php`, { method: 'GET' });
   if (!resp.ok) return { status: 'error' };
   try {
     return await resp.json(); // {status: 'ok'|'limit', message: '...'}
@@ -111,7 +111,7 @@ export function stopConversation() {
   const loopId = getRenderLoopId();
   if (loopId) cancelAnimationFrame(loopId);
 
-  // 🧼 Видалити canvas
+  // Видалити canvas
   const canvas = container.querySelector('canvas');
   if (canvas) canvas.remove();
 
@@ -123,7 +123,7 @@ export function stopConversation() {
   container.innerHTML = '';
   button.textContent = 'Talk with me';
 
-  // 🧼 Очистити сцену
+  // Очистити сцену
   const scene = getScene();
   if (scene) {
     scene.traverse((object) => {
@@ -147,7 +147,7 @@ export function stopConversation() {
       }
     });
 
-    // 🔁 Потім фізично прибрати об'єкти зі сцени
+    // Потім фізично прибрати об'єкти зі сцени
     while (scene.children.length > 0) {
       scene.remove(scene.children[0]);
     }
@@ -156,7 +156,7 @@ export function stopConversation() {
   }
 
 
-  // 🧼 Dispose рендерера
+  // Dispose рендерера
   const renderer = getRenderer();
   if (renderer) {
     // 💥 Видалити canvas перед dispose
@@ -169,30 +169,30 @@ export function stopConversation() {
     setRenderer(null);
   }
 
-  // 🎤 Видалити кнопку мікрофона
+  // Видалити кнопку мікрофона
   const micBtn = document.getElementById('mic-permission-btn');
   if (micBtn) micBtn.remove();
 
-  // 🔇 Зупинити аудіо
+  // Зупинити аудіо
   if (currentAudio && !currentAudio.paused) {
     currentAudio.pause();
     currentAudio.currentTime = 0;
     setCurrentAudio(null);
   }
 
-  // 🔕 Зупинити анімації
+  // Зупинити анімації
   if (currentMixer) {
     currentMixer.stopAllAction();
     setCurrentMixer(null);
   }
 
-  // 🎙️ Зупинити мікрофон
+  // Зупинити мікрофон
   if (micStream) {
     micStream.getTracks().forEach(track => track.stop());
     setMicStream(null);
   }
 
-    // 🔇 Закрити AudioContext, якщо активний
+    // Закрити AudioContext, якщо активний
   const ctx = getAudioContext();
   if (ctx && ctx.state !== 'closed') {
     ctx.close();

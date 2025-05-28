@@ -1,5 +1,4 @@
 import { playVoiceStreamWithMimic } from "../voice/playVoiceStreamWithMimic.js";
-import { BASE_URL } from '../../public/js/config.js';
 import { 
   setMicStream, 
   getConversationActive
@@ -79,14 +78,14 @@ export function promptMicrophoneAccess() {
 
       listenToSpeech(micStream);
     } catch (err) {
-      console.error('❌ Не вдалося отримати доступ до мікрофона:', err);
-      alert('Мікрофон не активовано. Я не зможу тебе почути 😢');
+      console.error('Не вдалося отримати доступ до мікрофона:', err);
+      alert('Мікрофон не активовано. Я не зможу тебе почути');
     }
   });
 }
 
 async function checkLimitOnBackend() {
-  const resp = await fetch('/php/checkLimit.php', { method: 'GET' });
+  const resp = await fetch(`${BASE_URL}/php/checkLimit.php`, { method: 'GET' });
   if (!resp.ok) return { status: 'error' };
   try {
     return await resp.json(); // {status: 'ok'|'limit', message: '...'}
@@ -142,7 +141,7 @@ function listenToSpeech(stream) {
       }
       lastSpokeTime = now;
     } else if (speaking && lastSpokeTime && now - lastSpokeTime > 1000) {
-      console.log('🤐 Тиша понад 1 сек — зупиняємо запис');
+      console.log('Тиша понад 1 сек — зупиняємо запис');
       stopAll();
     }
   };
@@ -151,7 +150,7 @@ function listenToSpeech(stream) {
 
   initialSilenceTimer = setTimeout(() => {
     if (!speaking) {
-      console.log('⌛ Нічого не сказав за 10 сек — зупиняємо запис');
+      console.log('Нічого не сказав за 10 сек — зупиняємо запис');
       stopAll();
     }
   }, 10000);
@@ -164,19 +163,19 @@ function listenToSpeech(stream) {
     if (!speaking) {
       silenceCount++;
       skipSTT = true; 
-      console.log(`🤐 Виявлено тишу. Мовчанок поспіль: ${silenceCount}`);
+      console.log(`Виявлено тишу. Мовчанок поспіль: ${silenceCount}`);
 
       if (silenceCount === 1) {
-        console.log('🟡 Перша мовчанка — надсилаємо __SILENCE__1 до GPT');
+        console.log('Перша мовчанка — надсилаємо __SILENCE__1 до GPT');
         handleFirstUserText('__SILENCE__1');
       } else if (silenceCount === 2) {
-        console.log('🔴 Друга мовчанка — надсилаємо __SILENCE__2 до GPT');
+        console.log('Друга мовчанка — надсилаємо __SILENCE__2 до GPT');
         handleFirstUserText('__SILENCE__2');
       }
       return; 
     }
 
-    console.log('🗣️ Користувач щось сказав — обнуляємо лічильник мовчанок');
+    console.log('Користувач щось сказав — обнуляємо лічильник мовчанок');
     silenceCount = 0;
     mediaRecorder.stop(); 
   };
@@ -184,36 +183,36 @@ function listenToSpeech(stream) {
 
   mediaRecorder.ondataavailable = (event) => {
     audioChunks.push(event.data);
-    console.log('📥 Отримано шматок аудіо:', event.data);
+    console.log('Отримано шматок аудіо:', event.data);
   };
 
 mediaRecorder.onstop = () => {
   if (!getConversationActive()) {
-    console.warn('🛑 Розмова вже завершена — пропускаємо onstop повністю');
+    console.warn('Розмова вже завершена — пропускаємо onstop повністю');
     return;
   }
 
   if (skipSTT) {
-    console.warn('🛑 Пропускаємо STT — це була мовчанка');
+    console.warn('Пропускаємо STT — це була мовчанка');
     skipSTT = false; 
     return;
   }
 
   const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
   if (audioBlob.size === 0) {
-    console.warn('⚠️ Порожній аудіо-файл. Пропускаємо розпізнавання.');
+    console.warn('Порожній аудіо-файл. Пропускаємо розпізнавання.');
     return;
   }
 
   const timestamp = new Date().toISOString();
-  console.log('✅ Запис завершено. Blob:', audioBlob);
-  console.log('🕓 Timestamp запису:', timestamp);
+  console.log('Запис завершено. Blob:', audioBlob);
+  console.log('Timestamp запису:', timestamp);
 
   const formData = new FormData();
   formData.append('audio', audioBlob, `voice-${timestamp}.webm`);
   formData.append('timestamp', timestamp);
 
-  console.log('📤 Відправляємо аудіо на розпізнавання мови...');
+  console.log('Відправляємо аудіо на розпізнавання мови...');
 
   fetch(`${BASE_URL}/php/speechToText.php`, {
     method: 'POST',
@@ -222,18 +221,18 @@ mediaRecorder.onstop = () => {
     .then(res => res.json())
     .then(data => {
       if (data.status === 'error') {
-        console.error('⚠️ Помилка від speechToText.php:', data.message);
-        alert('Не вдалося розпізнати мову. Спробуй ще раз 😊');
+        console.error('Помилка від speechToText.php:', data.message);
+        alert('Не вдалося розпізнати мову. Спробуй ще раз');
         return;
       }
 
       lastUserText = data.text;
       lastRealUserText = lastUserText; 
-      console.log('📌 Збережено текст користувача:', lastUserText);
+      console.log('Збережено текст користувача:', lastUserText);
 
       handleFirstUserText(lastUserText);
     })
-    .catch(err => console.error('❌ Speech-to-Text помилка:', err));
+    .catch(err => console.error('Speech-to-Text помилка:', err));
 };
 
   mediaRecorder.start();
@@ -275,8 +274,8 @@ Insert the marker as a separate word, directly before the relevant phrase.
     const data = await response.json();
 
     if (data.status === 'error') {
-      console.error('❌ GPT error:', data.message);
-      alert('GPT не відповів 😢');
+      console.error('GPT error:', data.message);
+      alert('GPT не відповів');
       return { answer: null, farewell: false };
     }
 
@@ -289,7 +288,7 @@ Insert the marker as a separate word, directly before the relevant phrase.
     return { answer: cleanAnswer, farewell: isFarewell, status: data.status, left: data.left };
 
   } catch (err) {
-    console.error('❌ GPT fetch помилка:', err);
+    console.error('GPT fetch помилка:', err);
     alert('Не вдалося отримати відповідь від GPT');
     return { answer: null, farewell: false };
   }
@@ -360,35 +359,35 @@ async function handleFirstUserText(text) {
 
   const { plainText, gestures, totalWords } = parseTextWithGestures(cleanAnswer);
   const gestureTags = [...cleanAnswer.matchAll(/\[gesture:([^\]]+)\]/g)].map(m => m[1]);
-  console.log('🎯 gesture-теги у відповіді:', gestureTags);
+  console.log('gesture-теги у відповіді:', gestureTags);
 
   try {
     await playVoiceStreamWithMimic(plainText, faceMesh, avatar, gestures, totalWords);
 
     // Якщо це останнє питання (left === 0 після відповіді), закриваємо розмову
     if (typeof left === 'number' && left === 0) {
-      console.log('👋 Досягнутий ліміт: це була остання відповідь. Закриваємо розмову.');
+      console.log('Досягнутий ліміт: це була остання відповідь. Закриваємо розмову.');
       setTimeout(() => import('./avatar-entry.js').then(m => m.stopConversation()), 3500);
       return;
     }
 
     if (isFinalSilence || farewell) {
-      console.log('🔍 Перевірка умови виходу: isFinalSilence =', isFinalSilence, ', farewell =', farewell);
-      console.log('👋 Завершуємо сцену після мовчанки / прощання');
+      console.log('Перевірка умови виходу: isFinalSilence =', isFinalSilence, ', farewell =', farewell);
+      console.log('Завершуємо сцену після мовчанки / прощання');
       import('./avatar-entry.js').then(m => m.stopConversation());
       return;
     }
     if (!getConversationActive()) {
-      console.warn('🛑 Розмова зупинена — не слухаємо далі');
+      console.warn('Розмова зупинена — не слухаємо далі');
       return;
     }
     if (!micStream || micStream.getTracks().some(t => t.readyState === 'ended')) {
-      console.warn('🎤 Мікрофон вимкнено.');
+      console.warn('Мікрофон вимкнено.');
       return;
     }
     listenToSpeech(micStream);
   } catch (err) {
-    console.error('❌ STREAM-TTS помилка:', err);
+    console.error('STREAM-TTS помилка:', err);
     alert('Не вдалося озвучити відповідь (stream).');
   }
 }

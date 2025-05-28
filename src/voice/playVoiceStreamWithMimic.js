@@ -156,7 +156,7 @@ export async function playVoiceStreamWithMimic(text, faceMesh, avatar, gestures 
 
       console.log('[TTS-STREAM] 🚀 Відправляємо текст у ElevenLabs:', text);
       const startTime = performance.now();
-      const resp = await fetch("php/tts.php", {
+      const resp = await fetch(`${BASE_URL}php/tts.php`, {
         method: "POST",
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text })
@@ -192,12 +192,12 @@ export async function playVoiceStreamWithMimic(text, faceMesh, avatar, gestures 
         const durationSec = tempAudio.duration;
         const avgWordsPerSecond = totalWords > 0 ? totalWords / durationSec : 1.6;
 
-        console.log(`📊 Динамічний avgWordsPerSecond: ${avgWordsPerSecond.toFixed(2)} (тривалість: ${durationSec.toFixed(2)}s, слова: ${totalWords})`);
+        console.log(`Динамічний avgWordsPerSecond: ${avgWordsPerSecond.toFixed(2)} (тривалість: ${durationSec.toFixed(2)}s, слова: ${totalWords})`);
 
         if (gestures.length > 0 && totalWords > 0) {
           gestures.forEach(g => {
             const timeMs = (g.wordPos / avgWordsPerSecond) * 1000;
-            console.log(`⏰ Gesture "${g.type}" (dynamic) через ${(timeMs / 1000).toFixed(2)} сек`);
+            console.log(`Gesture "${g.type}" (dynamic) через ${(timeMs / 1000).toFixed(2)} сек`);
             setTimeout(() => {
               if (g.type === 'attention') {
                 import('../gestures/gestureAttentionWithFinger.js')
@@ -214,7 +214,7 @@ export async function playVoiceStreamWithMimic(text, faceMesh, avatar, gestures 
     });
 
     audio.addEventListener("ended", () => {
-      console.log("[TTS-STREAM] ⏹️ завершено");
+      console.log("[TTS-STREAM] завершено");
       audio.src = "";
       URL.revokeObjectURL(activeAudioURL);
       activeAudioURL = null;

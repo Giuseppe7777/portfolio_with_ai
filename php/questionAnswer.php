@@ -5,7 +5,7 @@ header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Content-Type: application/json");
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    http_response_code(204); // No Content
+    http_response_code(204); 
     exit;
 }
 
@@ -113,7 +113,6 @@ $messages = [
         "content" => $question
     ]
 ];
-
 
 $postData = [
     "model" => "gpt-4o-mini",
