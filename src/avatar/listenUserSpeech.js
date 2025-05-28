@@ -1,4 +1,5 @@
 import { playVoiceStreamWithMimic } from "../voice/playVoiceStreamWithMimic.js";
+import { BASE_URL } from '../../public/js/config.js';
 import { 
   setMicStream, 
   getConversationActive
@@ -214,7 +215,7 @@ mediaRecorder.onstop = () => {
 
   console.log('📤 Відправляємо аудіо на розпізнавання мови...');
 
-  fetch('http://localhost/my-portfolio-fullstack-ai/my-portfolio-fullstack-ai/php/speechToText.php', {
+  fetch(`${BASE_URL}/php/speechToText.php`, {
     method: 'POST',
     body: formData
   })
@@ -263,7 +264,7 @@ Insert the marker as a separate word, directly before the relevant phrase.
 
 
   try {
-    const response = await fetch('http://localhost/my-portfolio-fullstack-ai/my-portfolio-fullstack-ai/php/questionAnswer.php', {
+    const response = await fetch(`${BASE_URL}/php/questionAnswer.php`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
