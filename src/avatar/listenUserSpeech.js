@@ -61,21 +61,7 @@ export function promptMicrophoneAccess() {
   const micBtn = document.createElement('button');
   micBtn.textContent = '🎤 Allow microphone';
   micBtn.id = 'mic-permission-btn';
-
-  Object.assign(micBtn.style, {
-    position: 'absolute',
-    bottom: '70px',
-    left: '50%',
-    transform: 'translateX(-50%)',
-    padding: '12px 20px',
-    fontSize: '18px',
-    background: '#111',
-    color: 'white',
-    border: '2px solid white',
-    borderRadius: '10px',
-    cursor: 'pointer',
-    zIndex: 9999
-  });
+  micBtn.className = 'mic-permission-btn';
 
   document.body.appendChild(micBtn);
 

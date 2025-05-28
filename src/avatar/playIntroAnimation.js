@@ -52,7 +52,7 @@ export function playIntroAnimation(mixer, avatar, faceMesh) {
   }
 
   // 🔹 Цільова позиція, щоб підплив до кадру (якщо треба)
-  const targetPosition = new THREE.Vector3(-0.15, 0.2, 0.36);
+  const targetPosition = new THREE.Vector3(0, 0.2, 0);
   const clock = new THREE.Clock();
   let stopped = false;
 

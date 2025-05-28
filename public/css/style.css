@@ -249,7 +249,7 @@ html, body {
 } 
 
 .hero img {
-    height: 650px;
+    height: 550px;
 }
 
 /* ========================================================= */
@@ -715,6 +715,12 @@ a.icon-up-bg:hover {color: #5de4fc;}
 
 /* Avatar start
 ================================================== */ 
+.my-avatar-box {
+    width: 350px;
+    height: 550px;
+    position: relative;
+    margin: 0 auto;
+}
 
 #avatar-photo {
   transition: opacity 1.2s ease;
@@ -750,13 +756,47 @@ a.icon-up-bg:hover {color: #5de4fc;}
 
 #talk-avatar-wrapper {
   position: absolute;
-  bottom: -117px;
+  bottom: -30px;
   left: 0;
+  z-index: 99;
 }
+
+/* Microphone START ==================================== */
+
+.mic-permission-btn  {
+  width: 220px;
+  position: absolute;
+  bottom: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 20px;
+  font-size: 17px;
+  background: rgb(17, 17, 17);
+  color: white;
+  border: 2px solid white;
+  border-radius: 10px;
+  cursor: pointer;
+  z-index: 9999;
+}
+
+/* Microphone END ==================================== */
 
 @media (max-width: 577px) {
   #talk-avatar-wrapper {
-    bottom: -18px;
+    bottom: 60px;
+  }
+
+  .mic-permission-btn  {
+    padding: 5px 0px;
+    font-size: 16px;
+    width: 200px;
+    bottom: 20px;
+  }
+}
+
+@media (max-width: 400px) {
+  .my-avatar-box {
+      width: 280px;
   }
 }
 
