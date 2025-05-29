@@ -156,7 +156,7 @@ export async function playVoiceStreamWithMimic(text, faceMesh, avatar, gestures 
 
       console.log('[TTS-STREAM] 🚀 Відправляємо текст у ElevenLabs:', text);
       const startTime = performance.now();
-      const resp = await fetch(`${BASE_URL}php/tts.php`, {
+      const resp = await fetch(`${BASE_URL}/php/tts.php`, {
         method: "POST",
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text })
