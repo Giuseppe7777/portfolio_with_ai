@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 define('LIMIT_FILE', __DIR__ . '/limits.json');
-define('MAX_QUESTIONS', 4);           
+define('MAX_QUESTIONS', 10);           
 define('PERIOD_SECONDS', 24 * 60 * 60); 
 
 // 1. Отримати IP користувача
