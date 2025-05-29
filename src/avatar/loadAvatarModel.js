@@ -11,7 +11,7 @@ export function loadAvatarModel(scene) {
   return new Promise((resolve, reject) => {
     const loader = new GLTFLoader();
     loader.load(
-      '/models/model-avatar-5-1.glb',
+      'models/model-avatar-5-1.glb',
       (gltf) => {
         const avatar = gltf.scene;
         // ===============================================================
