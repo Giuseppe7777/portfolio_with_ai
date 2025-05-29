@@ -6,4 +6,10 @@ window.BASE_URL = window.isVite
   : window.location.origin;
 
 window.INACTIVITY_TIMEOUT = 30000;
-window.DEBUG = true;
+window.DEBUG = false;
+
+if(!window.DEBUG) {
+  console.log = function() {};
+  console.warn = function() {};
+  console.info = function() {};
+}
