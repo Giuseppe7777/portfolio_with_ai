@@ -101,11 +101,11 @@ export async function playVoiceStreamWithMimic(text, faceMesh, avatar, gestures 
 
               if (hasMouth) {
                 const baseJaw = Math.PI / 2;
-                const amp = 0.4;
+                const amp = 1.0;
                 const animate = () => {
                   analyser.getByteFrequencyData(data);
                   const vol = data.reduce((a, b) => a + b, 0) / data.length / 255;
-                  infl[mouthIdx] = vol * 7;
+                  infl[mouthIdx] = vol * 12;
                   jaw.rotation.x = baseJaw + vol * amp;
                   if (!audio.paused && !audio.ended) {
                     requestAnimationFrame(animate);
