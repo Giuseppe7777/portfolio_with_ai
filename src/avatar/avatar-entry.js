@@ -23,6 +23,18 @@ import {
   setQuestionCount
 } from './state.js';
 
+function unlockAudioForSafari() {
+  const a = new Audio();
+  a.muted = true;
+  const playPromise = a.play();
+  if (playPromise) {
+    playPromise.catch(() => {}).finally(() => {
+      a.pause();
+      a.remove();
+    });
+  }
+}
+
 const button = document.getElementById('talk-button');
 const container = document.getElementById('avatar-container');
 const photo = document.getElementById('avatar-photo');
@@ -50,6 +62,7 @@ async function checkLimitOnBackend() {
 
 if (button && container && photo) {
   button.addEventListener('click', async () => {
+    unlockAudioForSafari();
     const isActive = getConversationActive();
 
     // ⛔ Не дозволяємо запускати сцену повторно, поки вона ще створюється
