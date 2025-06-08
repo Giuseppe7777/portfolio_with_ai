@@ -1,6 +1,11 @@
 // src/voice/playVoiceStreamWithMimic.js
 import * as THREE from "three";
-import { setTalking, setCurrentAudio, setAudioContext } from "../avatar/state.js";
+import {
+  setTalking,
+  setCurrentAudio,
+  setAudioContext,
+  getAudioContext,
+} from "../avatar/state.js";
 import { movementsAndMimicWhileTalking } from "../avatar/movAndMimWhileTalking.js";
 
 let activeAudioURL = null;
@@ -38,8 +43,16 @@ export async function playVoiceStreamWithMimic(text, faceMesh, avatar, gestures 
 
   let ctx, analyser, data;
   if (hasMouth) {
-    ctx = new AudioContext();
-    setAudioContext(ctx);
+    ctx = getAudioContext() || window.unlockedCtx;
+    if (ctx) {
+      if (ctx.state === 'suspended') {
+        try { await ctx.resume(); } catch (e) { console.warn('AudioContext resume failed', e); }
+      }
+      setAudioContext(ctx);
+    } else {
+      ctx = new AudioContext();
+      setAudioContext(ctx);
+    }
     const src = ctx.createMediaElementSource(audio);
     analyser = ctx.createAnalyser();
     analyser.fftSize = 512;

@@ -24,14 +24,16 @@ import {
 } from './state.js';
 
 function unlockAudioForSafari() {
-  const a = new Audio();
-  a.muted = true;
-  const playPromise = a.play();
-  if (playPromise) {
-    playPromise.catch(() => {}).finally(() => {
-      a.pause();
-      a.remove();
-    });
+  let ctx = new (window.AudioContext || window.webkitAudioContext)();
+  if (typeof setAudioContext === 'function') {
+    setAudioContext(ctx);
+  } else {
+    window.unlockedCtx = ctx;
+  }
+
+  // Immediately resume the context within the user gesture
+  if (ctx.state === 'suspended' && typeof ctx.resume === 'function') {
+    ctx.resume();
   }
 }
 
