@@ -4,6 +4,7 @@ import { preloadAvatarModel } from './preloadAvatarModel.js';
 import { playVoiceStreamWithMimic } from "../voice/playVoiceStreamWithMimic.js";
 import { sendToGPT } from "./listenUserSpeech.js";
 import { playLimitMessageWithAvatar } from "./playLimitMessageWithAvatar.js";
+import { resetSpeechState } from './listenUserSpeech.js';
 import {
   setConversationActive,
   getConversationActive,
@@ -100,6 +101,7 @@ if (button && container && photo) {
 }
 
 export function stopConversation() {
+  resetSpeechState();
   setConversationActive(false);
   isLaunching = false;
 

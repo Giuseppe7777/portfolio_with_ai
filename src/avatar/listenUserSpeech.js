@@ -8,6 +8,9 @@ import {
  * Показує кнопку для дозволу на мікрофон і починає слухати, якщо користувач погодився
  */
 
+let silenceInterval = null;
+let initialSilenceTimer = null;
+
 function parseTextWithGestures(text) {
   const regex = /\[gesture:(explain|attention)\]/g;
   let match;
@@ -113,7 +116,6 @@ function listenToSpeech(stream) {
   const silenceThreshold = 0.01;
   let speaking = false;
   let lastSpokeTime = null;
-  let initialSilenceTimer = null;
 
   const checkSilence = () => {
     const data = new Uint8Array(analyser.fftSize);
@@ -146,7 +148,7 @@ function listenToSpeech(stream) {
     }
   };
 
-  const silenceInterval = setInterval(checkSilence, 200);
+  silenceInterval = setInterval(checkSilence, 200);
 
   initialSilenceTimer = setTimeout(() => {
     if (!speaking) {
@@ -390,6 +392,18 @@ async function handleFirstUserText(text) {
     console.error('STREAM-TTS помилка:', err);
     alert('Не вдалося озвучити відповідь (stream).');
   }
+}
+
+export function resetSpeechState() {
+  silenceCount = 0;
+  skipSTT = false;
+  isFinalSilence = false;
+  lastUserText = '';
+  lastRealUserText = '';
+  if (silenceInterval) clearInterval(silenceInterval);
+  silenceInterval = null;
+  if (initialSilenceTimer) clearTimeout(initialSilenceTimer);
+  initialSilenceTimer = null;
 }
 
 

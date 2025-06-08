@@ -6,7 +6,7 @@ window.BASE_URL = window.isVite
   : window.location.origin + "/portfolio";
 
 window.INACTIVITY_TIMEOUT = 30000;
-window.DEBUG = false;
+window.DEBUG = true;
 
 if(!window.DEBUG) {
   console.log = function() {};
