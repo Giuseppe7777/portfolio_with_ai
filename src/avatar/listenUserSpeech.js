@@ -102,13 +102,21 @@ let isFinalSilence = false;
 let lastUserText = '';
 let lastRealUserText = '';
 
-function listenToSpeech(stream) {
+async function listenToSpeech(stream) {
   console.log('🎙️ Починаємо запис голосу...');
 
   const mediaRecorder = new MediaRecorder(stream);
   const audioChunks = [];
 
   const audioContext = getAudioContext();
+  if (audioContext.state === 'suspended') {
+    try {
+      await audioContext.resume();
+      console.log('[MIC] ctx.resume(), state =', audioContext.state);
+    } catch (e) {
+      console.warn('[MIC] resume failed', e);
+    }
+  }
   const source = audioContext.createMediaStreamSource(stream);
   const analyser = audioContext.createAnalyser();
   analyser.fftSize = 512;

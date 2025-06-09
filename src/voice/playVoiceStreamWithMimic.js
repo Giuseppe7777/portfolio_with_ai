@@ -24,6 +24,7 @@ export async function playVoiceStreamWithMimic(text, faceMesh, avatar, gestures 
 
   const mediaSource = new MediaSource();
   const audio = new Audio();
+  audio.crossOrigin = 'anonymous';
   const audioURL = URL.createObjectURL(mediaSource);
   activeAudioURL = audioURL;
   audio.src = audioURL;
@@ -36,12 +37,17 @@ export async function playVoiceStreamWithMimic(text, faceMesh, avatar, gestures 
   const mouthIdx = dict["A25_Jaw_Open"];
   const jaw = avatar.getObjectByName("mixamorigJawRoot");
   const hasMouth = mouthIdx !== undefined && jaw;
+  const baseJaw  = Math.PI / 2;
 
   let ctx, analyser, data;
   if (hasMouth) {
     ctx = getAudioContext();
     setAudioContext(ctx);
+    if (ctx.state === 'suspended') await ctx.resume();
     const src = ctx.createMediaElementSource(audio);
+    console.log('[ANL] ctx.state:', ctx.state,
+                '| src OK:', !!src,
+                '| fftSize', 512);
     analyser = ctx.createAnalyser();
     analyser.fftSize = 512;
     src.connect(analyser);
@@ -101,11 +107,16 @@ export async function playVoiceStreamWithMimic(text, faceMesh, avatar, gestures 
               setTalking(true);
 
               if (hasMouth) {
-                const baseJaw = Math.PI / 2;
                 const amp = 1.0;
                 const animate = () => {
                   analyser.getByteFrequencyData(data);
                   const vol = data.reduce((a, b) => a + b, 0) / data.length / 255;
+
+                  //=====================================================
+                  if (performance.now() % 500 < 16) {            
+                  console.log('[ANL] avgVol', vol.toFixed(3));    }
+                  //=====================================================
+
                   infl[mouthIdx] = vol * 12;
                   jaw.rotation.x = baseJaw + vol * amp;
                   if (!audio.paused && !audio.ended) {
@@ -222,6 +233,9 @@ export async function playVoiceStreamWithMimic(text, faceMesh, avatar, gestures 
       if (mediaSource.readyState === "open" && sb && !sb.updating) {
         try { mediaSource.removeSourceBuffer(sb); } catch (e) {}
       }
+      infl[mouthIdx] = 0;
+      jaw.rotation.x = baseJaw;
+      audio.volume = 1.0;
       resolve();
     });
   });
