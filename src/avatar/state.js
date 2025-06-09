@@ -71,14 +71,6 @@ export function getRenderer() {
   return currentRenderer;
 }
 
-export let currentAudioContext = null;
-export function setAudioContext(ctx) {
-  currentAudioContext = ctx;
-}
-export function getAudioContext() {
-  return currentAudioContext;
-}
-
 export let questionCount = 0;
 
 export function setQuestionCount(val) {
@@ -113,3 +105,17 @@ export function setLastSessionLS(ts) {
   localStorage.setItem('lastAvatarSession', ts);
   console.log('[lastAvatarSession] set in LS:', ts);
 }
+
+export let globalAudioCtx = null;
+
+export function getAudioContext() {
+  if (!globalAudioCtx) {
+    globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  return globalAudioCtx;
+}
+
+export function setAudioContext(ctx) {
+  globalAudioCtx = ctx;
+}
+

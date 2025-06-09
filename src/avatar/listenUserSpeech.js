@@ -1,7 +1,8 @@
 import { playVoiceStreamWithMimic } from "../voice/playVoiceStreamWithMimic.js";
 import { 
   setMicStream, 
-  getConversationActive
+  getConversationActive,
+  getAudioContext
 } from './state.js';
 
 /**
@@ -107,7 +108,7 @@ function listenToSpeech(stream) {
   const mediaRecorder = new MediaRecorder(stream);
   const audioChunks = [];
 
-  const audioContext = new AudioContext();
+  const audioContext = getAudioContext();
   const source = audioContext.createMediaStreamSource(stream);
   const analyser = audioContext.createAnalyser();
   analyser.fftSize = 512;
@@ -160,7 +161,6 @@ function listenToSpeech(stream) {
   const stopAll = () => {
     clearInterval(silenceInterval);
     clearTimeout(initialSilenceTimer);
-    audioContext.close();
 
     if (!speaking) {
       silenceCount++;

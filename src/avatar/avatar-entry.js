@@ -51,6 +51,10 @@ async function checkLimitOnBackend() {
 
 if (button && container && photo) {
   button.addEventListener('click', async () => {
+    const ctx = getAudioContext();
+    if (ctx.state === 'suspended') {
+      await ctx.resume();
+    }
     const isActive = getConversationActive();
 
     // ⛔ Не дозволяємо запускати сцену повторно, поки вона ще створюється

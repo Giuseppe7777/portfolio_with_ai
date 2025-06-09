@@ -2,6 +2,7 @@
 import * as THREE from "three";
 import { setTalking, setCurrentAudio, setAudioContext } from "../avatar/state.js";
 import { movementsAndMimicWhileTalking } from "../avatar/movAndMimWhileTalking.js";
+import { getAudioContext } from "../avatar/state.js";
 
 let activeAudioURL = null;
 
@@ -38,7 +39,7 @@ export async function playVoiceStreamWithMimic(text, faceMesh, avatar, gestures 
 
   let ctx, analyser, data;
   if (hasMouth) {
-    ctx = new AudioContext();
+    ctx = getAudioContext();
     setAudioContext(ctx);
     const src = ctx.createMediaElementSource(audio);
     analyser = ctx.createAnalyser();
