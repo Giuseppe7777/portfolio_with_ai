@@ -28,7 +28,17 @@ const button = document.getElementById('talk-button');
 const container = document.getElementById('avatar-container');
 const photo = document.getElementById('avatar-photo');
 
-// --- Видалено функцію is24HoursPassed та всю LocalStorage-логіку ---
+function unlockAudioForSafari() {
+  const a = new Audio();
+  a.muted = true;
+  const playPromise = a.play();
+  if (playPromise) {
+    playPromise.catch(() => {}).finally(() => {
+      a.pause();
+      a.remove();
+    });
+  }
+}
 
 preloadAvatarModel().then((data) => {
   window.preloadedAvatarData = data;
@@ -51,10 +61,7 @@ async function checkLimitOnBackend() {
 
 if (button && container && photo) {
   button.addEventListener('click', async () => {
-    const ctx = getAudioContext();
-    if (ctx.state === 'suspended') {
-      await ctx.resume();
-    }
+    unlockAudioForSafari();
     const isActive = getConversationActive();
 
     // ⛔ Не дозволяємо запускати сцену повторно, поки вона ще створюється
