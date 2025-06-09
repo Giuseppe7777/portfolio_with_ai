@@ -111,12 +111,6 @@ export async function playVoiceStreamWithMimic(text, faceMesh, avatar, gestures 
                 const animate = () => {
                   analyser.getByteFrequencyData(data);
                   const vol = data.reduce((a, b) => a + b, 0) / data.length / 255;
-
-                  //=====================================================
-                  if (performance.now() % 500 < 16) {            
-                  console.log('[ANL] avgVol', vol.toFixed(3));    }
-                  //=====================================================
-
                   infl[mouthIdx] = vol * 12;
                   jaw.rotation.x = baseJaw + vol * amp;
                   if (!audio.paused && !audio.ended) {

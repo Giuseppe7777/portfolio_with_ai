@@ -21,7 +21,8 @@ import {
   getRenderer,
   setRenderer,
   getAudioContext,
-  setQuestionCount
+  setQuestionCount,
+  closeAudioContext
 } from './state.js';
 
 const button = document.getElementById('talk-button');
@@ -206,8 +207,5 @@ export function stopConversation() {
   }
 
     // Закрити AudioContext, якщо активний
-  const ctx = getAudioContext();
-  if (ctx && ctx.state !== 'closed') {
-    ctx.close();
-  }
+  closeAudioContext();
 }

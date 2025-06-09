@@ -119,3 +119,9 @@ export function setAudioContext(ctx) {
   globalAudioCtx = ctx;
 }
 
+export function closeAudioContext() {
+  if (globalAudioCtx && globalAudioCtx.state !== 'closed') {
+    globalAudioCtx.close();
+    globalAudioCtx = null;
+  }
+}
