@@ -1,0 +1,22 @@
+==== Запит ===== 2025-06-10 16:31:35
+Отримано файл: Array
+(
+    [name] => voice-2025-06-10T14:31:35.933Z.webm
+    [full_path] => voice-2025-06-10T14:31:35.933Z.webm
+    [type] => audio/webm
+    [tmp_name] => C:\xampp\tmp\php56CD.tmp
+    [error] => 0
+    [size] => 79373
+)
+
+==== Запит ===== 2025-06-10 16:40:13
+Отримано файл: Array
+(
+    [name] => voice-2025-06-10T14:40:13.503Z.webm
+    [full_path] => voice-2025-06-10T14:40:13.503Z.webm
+    [type] => audio/webm
+    [tmp_name] => C:\xampp\tmp\php3C89.tmp
+    [error] => 0
+    [size] => 82271
+)
+
