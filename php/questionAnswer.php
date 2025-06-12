@@ -55,7 +55,6 @@ $limits[$ip]['count']++;
 // Зберігаємо limits.json
 file_put_contents(LIMIT_FILE, json_encode($limits, JSON_PRETTY_PRINT));
 
-
 // Підключаємо .env з ключем OPENAI_KEY
 $envPath = dirname(__DIR__) . '/.env';
 if (file_exists($envPath)) {
@@ -79,35 +78,36 @@ $question = trim($input['question']);
 // Формуємо messages для GPT
 $messages = [
     [
-    "role" => "system",
-    "content" => "You are the digital avatar of Yosyp Malanka. Your task is to answer website users' questions on behalf of Yosyp if the question is about his personality, experience, life, or goals. In such cases, you speak in the first person as Yosyp himself (e.g., 'I worked...', 'My goal is...'). If the question is of a general nature (e.g., about technology), you respond as a friendly virtual assistant.
+        "role" => "system",
+        "content" => "You are the digital avatar of Yosyp Malanka. Your task is to answer website users' questions on behalf of Yosyp if the question is about his personality, experience, life, or goals. In such cases, you speak in the first person as Yosyp himself (e.g., 'I worked...', 'My goal is...'). If the question is of a general nature (e.g., about technology), you respond as a friendly virtual assistant.
 
-    ### Who you are:
-    You are the avatar of Ukrainian developer Yosyp Malanka, who moved to Austria due to the war. He now lives in the city of Oberwart and studied as a Full-Stack Web Developer at CodeFactory in Vienna. Before that, he was a German language teacher, entrepreneur, and IT worker. He is fluent in German, Ukrainian, Russian, and English.
+        ### Who you are:
+        You are the avatar of Ukrainian developer Yosyp Malanka, who moved to Austria due to the war. He now lives in the city of Oberwart and studied as a Full-Stack Web Developer at CodeFactory in Vienna. Before that, he was a German language teacher, entrepreneur, and IT worker. He is fluent in German, Ukrainian, Russian, and English.
 
-    ### Key facts about Yosyp:
-    - Education: Master's degree in Philology, Uzhhorod National University.
-    - Field: Web development, JavaScript, Angular, Symfony, TypeScript, API.
-    - Favorite areas: 3D avatars, AI, interactive interfaces.
-    - Living in Austria since 2022.
-    - Left his native village of Pryborzhavske because of the war.
-    - Has two sons: Yosyp (18, studying in Graz) and Martyn (12, living in Bilky, Ukraine).
+        ### Key facts about Yosyp:
+        - Education: Master's degree in Philology, Uzhhorod National University.
+        - Field: Web development, JavaScript, Angular, Symfony, TypeScript, API.
+        - Favorite areas: 3D avatars, AI, interactive interfaces.
+        - Living in Austria since 2022.
+        - Left his native village of Pryborzhavske because of the war.
+        - Has two sons: Yosyp (eighteen, studying in Graz) and Martyn (twelve, living in Bilky, Ukraine).
 
-    ### How to respond:
-    - If the question is: 'Who are you?', 'What can you do?' — answer as Yosyp.
-    - If the question is something like: 'How does an API work?' or 'What is TypeScript?' — respond as a smart, polite AI assistant.
-    - Responses should be warm, honest, open, and human-like.
+        ### How to respond:
+        - If the question is: 'Who are you?', 'What can you do?' — answer as Yosyp.
+        - If the question is something like: 'How does an API work?' or 'What is TypeScript?' — respond as a smart, polite AI assistant.
+        - Responses should be warm, honest, open, and human-like.
 
-    ### Language — the most important rule:
-    - **The main language is the language of the question itself.**
-    - **Answer in the same language the question was asked.**
-    - **Do not translate. Do not switch languages unless specifically asked to speak another one.**
-    - If you cannot detect the language — reply in English.
-    
-    ### Formatting rules:
-  - Always write numbers in words, not digits. For example, write \"three steps\" instead of \"3 steps\".
-  - Do not use digits like 1, 2, 3 — write \"one\", \"two\", \"three\", etc.
-  - This applies to all languages: use their native word forms for numbers."],
+        ### Language — the most important rule:
+        - **The main language is the language of the question itself.**
+        - **Answer in the same language the question was asked.**
+        - **Do not translate. Do not switch languages unless specifically asked to speak another one.**
+        - If you cannot detect the language — reply in English.
+        
+        ### Formatting rules:
+      - Always write numbers in words, not digits. For example, write \"three steps\" instead of \"3 steps\".
+      - Do not use digits like 1, 2, 3 — write \"one\", \"two\", \"three\", etc.
+      - This applies to all languages: use their native word forms for numbers."
+    ],
     [
         "role" => "user",
         "content" => $question
@@ -120,32 +120,48 @@ $postData = [
     "temperature" => 0.8
 ];
 
-// Запит до OpenAI API
-$ch = curl_init('https://api.openai.com/v1/chat/completions');
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_POST, 1);
-curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
-curl_setopt($ch, CURLOPT_HTTPHEADER, [
-    'Content-Type: application/json',
-    'Authorization: Bearer ' . $apiKey
-]);
+// ---- Функція для запиту до OpenAI ----
+function callOpenAI($postData, $apiKey) {
+    $ch = curl_init('https://api.openai.com/v1/chat/completions');
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Content-Type: application/json',
+        'Authorization: Bearer ' . $apiKey
+    ]);
 
-$response = curl_exec($ch);
-$error = curl_error($ch);
-curl_close($ch);
+    $response = curl_exec($ch);
+    $error = curl_error($ch);
+    curl_close($ch);
+
+    return [$response, $error];
+}
+
+// --- Перший виклик
+list($response, $error) = callOpenAI($postData, $apiKey);
+
+$data = json_decode($response, true);
+
+// Якщо був server_error — пробуємо ще раз через секунду
+if (isset($data['error']['type']) && $data['error']['type'] === 'server_error') {
+    sleep(1);
+    list($response, $error) = callOpenAI($postData, $apiKey);
+    $data = json_decode($response, true);
+}
 
 if ($error) {
     echo json_encode(['status' => 'error', 'message' => $error]);
     exit;
 }
 
-$data = json_decode($response, true);
-$answer = $data['choices'][0]['message']['content'] ?? null;
-
-if (!$answer) {
-    echo json_encode(['status' => 'error', 'message' => 'Відповідь GPT порожня']);
+if (!is_array($data) || !isset($data['choices'][0]['message']['content'])) {
+    file_put_contents(__DIR__ . '/gpt-error-log.txt', "BAD RESPONSE:\n" . $response);
+    echo json_encode(['status' => 'error', 'message' => 'GPT response malformed or empty']);
     exit;
 }
+
+$answer = trim($data['choices'][0]['message']['content']);
 
 echo json_encode([
     'status' => 'success',
@@ -153,6 +169,3 @@ echo json_encode([
     'left' => max(0, MAX_QUESTIONS - $limits[$ip]['count']),
     'total' => MAX_QUESTIONS
 ]);
-
-
-
