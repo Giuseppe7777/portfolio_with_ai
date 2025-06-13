@@ -29,6 +29,21 @@ const button = document.getElementById('talk-button');
 const container = document.getElementById('avatar-container');
 const photo = document.getElementById('avatar-photo');
 
+function isBlockedPlatformOrBrowser() {
+  const ua = navigator.userAgent;
+
+  const isIOS = /iPhone|iPad|iPod/i.test(ua);
+  const isMac = /Macintosh|Mac OS X|Mac_PowerPC/i.test(ua);
+
+  const isFirefox = /firefox/i.test(ua);
+
+  if (isIOS || isMac) return true;
+
+  if (isFirefox) return true;
+
+  return false;
+}
+
 function unlockAudioForSafari() {
   const a = new Audio();
   a.muted = true;
@@ -54,7 +69,7 @@ async function checkLimitOnBackend() {
   const resp = await fetch(`${BASE_URL}/php/checkLimit.php`, { method: 'GET' });
   if (!resp.ok) return { status: 'error' };
   try {
-    return await resp.json(); // {status: 'ok'|'limit', message: '...'}
+    return await resp.json(); 
   } catch {
     return { status: 'error' };
   }
@@ -62,6 +77,14 @@ async function checkLimitOnBackend() {
 
 if (button && container && photo) {
   button.addEventListener('click', async () => {
+    if (isBlockedPlatformOrBrowser()) {
+      console.warn('[AVATAR ENTRY] Доступ заблоковано: macOS, iOS або Firefox');
+      alert(
+        "❗ Sorry! Talking to the avatar is temporarily unavailable on macOS, iOS, and in Firefox on any system.\n\n" +
+        "Please open this site in Google Chrome, Edge, or Opera on Windows or Android."
+      );
+      return;
+    }
     unlockAudioForSafari();
     const isActive = getConversationActive();
 

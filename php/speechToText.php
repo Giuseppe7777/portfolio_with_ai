@@ -4,8 +4,6 @@ header("Access-Control-Allow-Headers: *");
 header("Access-Control-Allow-Methods: POST, OPTIONS");
 header("Content-Type: application/json");
 
-file_put_contents(__DIR__ . '/stt-log.txt', "==== Запит ===== " . date('Y-m-d H:i:s') . "\n", FILE_APPEND);
-
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     http_response_code(200);
     exit;
@@ -21,10 +19,8 @@ if (file_exists($envPath)) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['audio'])) {
     $audioFile = $_FILES['audio'];
-    file_put_contents(__DIR__ . '/stt-log.txt', "Отримано файл: " . print_r($audioFile, 1) . "\n", FILE_APPEND);
 
     if (!file_exists($audioFile['tmp_name'])) {
-        file_put_contents(__DIR__ . '/stt-log.txt', "Файл не знайдено: " . $audioFile['tmp_name'] . "\n", FILE_APPEND);
         echo json_encode(['status' => 'error', 'message' => 'Файл не знайдено на сервері']);
         exit;
     }
@@ -39,7 +35,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['audio'])) {
 
     $apiKey = getenv('OPENAI_KEY');
     if (!$apiKey) {
-        file_put_contents(__DIR__ . '/stt-log.txt', "НЕМАЄ OPENAI_KEY\n", FILE_APPEND);
         echo json_encode(['status' => 'error', 'message' => 'API ключ не знайдено']);
         exit;
     }
@@ -57,10 +52,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['audio'])) {
     $info = curl_getinfo($ch);
     curl_close($ch);
 
-    file_put_contents(__DIR__ . '/stt-log.txt', "CURL info: " . print_r($info, 1) . "\n", FILE_APPEND);
-    file_put_contents(__DIR__ . '/stt-log.txt', "CURL response: " . $response . "\n", FILE_APPEND);
-    file_put_contents(__DIR__ . '/stt-log.txt', "CURL error: " . $error . "\n", FILE_APPEND);
-
     if ($error) {
         echo json_encode(['status' => 'error', 'message' => $error]);
     } else {
@@ -70,5 +61,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['audio'])) {
     exit;
 }
 
-file_put_contents(__DIR__ . '/stt-log.txt', "Файл не отримано\n", FILE_APPEND);
 echo json_encode(['status' => 'error', 'message' => 'Файл не отримано']);
