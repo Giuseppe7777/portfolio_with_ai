@@ -36,6 +36,7 @@ export async function playVoiceStreamWithMimic(text, faceMesh, avatar, gestures 
   const infl = faceMesh.morphTargetInfluences;
   const mouthIdx = dict["A25_Jaw_Open"];
   const jaw = avatar.getObjectByName("mixamorigJawRoot");
+  console.log('bind jaw X =', jaw?.rotation.x);
   const hasMouth = mouthIdx !== undefined && jaw;
   const baseJaw  = Math.PI / 2;
 
@@ -107,11 +108,11 @@ export async function playVoiceStreamWithMimic(text, faceMesh, avatar, gestures 
               setTalking(true);
 
               if (hasMouth) {
-                const amp = 1.0;
+                const amp = -Math.PI / 6;
                 const animate = () => {
                   analyser.getByteFrequencyData(data);
                   const vol = data.reduce((a, b) => a + b, 0) / data.length / 255;
-                  infl[mouthIdx] = vol * 12;
+                  infl[mouthIdx] = vol * 5;
                   jaw.rotation.x = baseJaw + vol * amp;
                   if (!audio.paused && !audio.ended) {
                     requestAnimationFrame(animate);
